@@ -53,7 +53,7 @@ python playground.py
 Open a browser to the default Gradio port: http://127.0.0.1:7860/
 
 After the interface is launched, select or create a new agent and start chatting as shown in the image below:
-![Playground](./images/playground.png)
+![Playground](./images/gptplayground.png)
 
 ## Learning Resources
 - [OpenAI Documentation](https://beta.openai.com/docs/)
