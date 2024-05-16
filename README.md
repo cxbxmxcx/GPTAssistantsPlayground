@@ -54,6 +54,10 @@ Open a browser to the default Gradio port: http://127.0.0.1:7860/
 
 After the interface is launched, select or create a new agent and start chatting as shown in the image below:
 ![Playground](./images/gptplayground.png)
+The interface consists of the following components:
+* The Assistants panel where you can select, update and create assistants
+* The conversation panel which is multi-modal and supports uploading files and for the assistant to generate and show files.
+* The Assistant log panel shows how the assistant is working with and consuming tools behind the scenes. This includes showing the code it runs within its code interpreter.
 
 ## Learning Resources
 - [OpenAI Documentation](https://beta.openai.com/docs/)
