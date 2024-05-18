@@ -1,5 +1,6 @@
 import datetime
 import json
+import textwrap
 
 import openai
 from dotenv import load_dotenv
@@ -127,23 +128,18 @@ class EventHandler(AssistantEventHandler):
             if tool.function.name in self.action_manager.get_action_names():
                 action = self.action_manager.get_action(tool.function.name)
                 if action:
-                    # Call the action function with the provided arguments
-                    # self._logs += [
-                    #     f"\nCalling action: {tool.function.name}(args={tool.function.arguments})"
-                    # ]
                     args = json.loads(tool.function.arguments)
                     output = action["pointer"](**args)
-                    # self._logs += [f"Action output: {output}"]
                     tool_outputs.append(
                         {"tool_call_id": tool.id, "output": str(output)}
                     )
                     self._logs += [
-                        f"""
+                        textwrap.dedent(f"""
                         <details>
                             <summary>action: {tool.function.name}(args={tool.function.arguments}</summary>
                             <pre>{str(output)}</pre>
                         </details>
-                    """
+                    """)
                     ]
 
         # Submit all tool_outputs at the same time
@@ -161,5 +157,3 @@ class EventHandler(AssistantEventHandler):
         ) as stream:
             for text in stream.text_deltas:
                 self.output_queue.put(("text", text))
-                # print(text, end="", flush=True)
-                # print()

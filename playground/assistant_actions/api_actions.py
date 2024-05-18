@@ -24,3 +24,24 @@ def delete_uploaded_file(file_id):
     if not deleted:
         return f"Unable to delete file with ID {file_id}."
     return f"File with ID {file_id} deleted successfully."
+
+
+@agent_action
+def list_assistants(self):
+    """Lists all the assistants."""
+    assistants = api.list_assistants()
+    assistants = [
+        {
+            "id": assistant.id,
+            "name": assistant.name,
+            "description": assistant.description,
+        }
+        for assistant in assistants
+    ]
+    return assistants
+
+
+@agent_action
+def call_assistant(assistant_id, message):
+    """Calls the assistant with the given assistant_id and message."""
+    return api.call_assistant(assistant_id, message)

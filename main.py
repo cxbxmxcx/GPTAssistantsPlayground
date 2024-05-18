@@ -1,5 +1,4 @@
 import queue
-import re
 import threading
 from contextlib import contextmanager
 
@@ -9,23 +8,33 @@ from playground.actions_manager import ActionsManager
 from playground.assistants_api import api
 from playground.assistants_panel import assistants_panel
 from playground.assistants_utils import EventHandler
+from playground.semantic_manager import SemanticManager
 
 thread = api.create_thread()  # create a new thread everytime this is run
 actions_manager = ActionsManager()
+semantic_manager = SemanticManager()
 # Chatbot demo with multimodal input (text, markdown, LaTeX, code blocks, image, audio, & video). Plus shows support for streaming text.
 
 
 def wrap_latex_with_markdown(text):
-    # Regular expression to find LaTeX enclosed in [] or ()
-    bracket_pattern = re.compile(r"\[(.*?)\]")
-    parenthesis_pattern = re.compile(r"\((.*?)\)")
-
-    # Replace LaTeX within brackets with Markdown inline math
-    text = bracket_pattern.sub(r"$$\1$$", text)
-
-    # Replace LaTeX within parentheses with Markdown inline math
-    text = parenthesis_pattern.sub(r"$$\1$$", text)
+    system = """You are a LaTeX genius and equation genius!,
+    Your job is to identify LaTeX and equations in the text. 
+    For each block of LaTeX or equation text you will wrap it with $ if the block is inline,
+    or with $$ if the block is on its own line.
+    """
+    user = text
+    text = semantic_manager.get_semantic_response(system, user)
     return text
+    # # Regular expression to find LaTeX enclosed in [] or ()
+    # bracket_pattern = re.compile(r"\[(.*?)\]")
+    # parenthesis_pattern = re.compile(r"\((.*?)\)")
+
+    # # Replace LaTeX within brackets with Markdown inline math
+    # text = bracket_pattern.sub(r"$$\1$$", text)
+
+    # # Replace LaTeX within parentheses with Markdown inline math
+    # text = parenthesis_pattern.sub(r"$$\1$$", text)
+    # return text
 
 
 def print_like_dislike(x: gr.LikeData):
@@ -87,58 +96,23 @@ def run(history, assistant_id, logs):
             item_type, item_value = output_queue.get(timeout=0.1)
             if item_type == "text":
                 history[-1][1] += item_value
-                history[-1][1] = wrap_latex_with_markdown(history[-1][1])
+                # history[-1][1] = wrap_latex_with_markdown(history[-1][1])
             yield history, "".join(eh.logs)
-
-            # # If a new stream is created within the current stream, start a new thread for it
-            # if (
-            #     "new_stream_created" in item_value
-            # ):  # Replace this condition with actual condition
-            #     new_stream_thread = threading.Thread(
-            #         target=stream_worker, args=(assistant.id, new_thread_id, eh)
-            #     )
-            #     new_stream_thread.start()
 
         except queue.Empty:
             pass
-
+    history[-1][1] = wrap_latex_with_markdown(history[-1][1])
+    yield history, "".join(eh.logs)
     # Final flush of images
     while len(eh.images) > 0:
         history.append((None, (eh.images.pop(),)))
         yield history, "".join(eh.logs)
 
+    initial_thread.join()
     return None, "".join(eh.logs)
 
 
-# def run(history, assistant_id, logs):
-#     assistant = api.retrieve_assistant(assistant_id)
-#     eh = EventHandler([logs], actions_manager)
-#     if assistant is None:
-#         msg = "Assistant not found."
-#         history.append((None, msg))
-#         yield history, msg
-#         return
-
-#     with api.run_stream(
-#         thread_id=thread.id,
-#         assistant_id=assistant.id,
-#         event_handler=eh,
-#     ) as stream:
-#         while len(eh.images) > 0:
-#             history.append((None, (eh.images.pop(),)))
-#             history.append(("", None))
-#         history[-1][1] = ""
-#         for text in stream.text_deltas:
-#             history[-1][1] += text
-#             history[-1][1] = wrap_latex_with_markdown(history[-1][1])
-#             yield history, "".join(eh.logs)
-
-#     while len(eh.images) > 0:
-#         history.append((None, (eh.images.pop(),)))
-#         yield history, "".join(eh.logs)
-#     return None, "".join(eh.logs)
-
-
+# Custom CSS
 custom_css = """
 :root {
     --adjustment-ratio: 150px; /* Height to subtract from the viewport for chatbot */
