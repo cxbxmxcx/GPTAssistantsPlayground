@@ -11,11 +11,12 @@ class AssistantsAPI:
     def create_thread(self):
         return self.client.beta.threads.create()
 
-    def create_thread_message(self, thread_id, role, content):
+    def create_thread_message(self, thread_id, role, content, attachments=None):
         return self.client.beta.threads.messages.create(
             thread_id=thread_id,
             role=role,
             content=content,
+            attachments=attachments,
         )
 
     def create_assistant(
@@ -24,7 +25,7 @@ class AssistantsAPI:
         instructions,
         model,
         tools,
-        files,
+        actions,
         response_format,
         temperature,
         top_p,
@@ -33,11 +34,12 @@ class AssistantsAPI:
             name=name,
             instructions=instructions,
             model=model,
-            tools=tools,
+            tools=tools + actions,
             response_format=response_format,
             temperature=temperature,
             top_p=top_p,
         )
+
         return assistant
 
     def run_stream(self, thread_id, assistant_id, event_handler):
@@ -65,7 +67,7 @@ class AssistantsAPI:
         assistant_instructions,
         assistant_model,
         assistant_tools,
-        assistant_files,
+        assistant_actions,
         assistant_resformat,
         assistant_temperature,
         assistant_top_p,
@@ -75,7 +77,7 @@ class AssistantsAPI:
             name=assistant_name,
             instructions=assistant_instructions,
             model=assistant_model,
-            tools=assistant_tools,
+            tools=assistant_tools + assistant_actions,
             response_format=assistant_resformat,
             temperature=assistant_temperature,
             top_p=assistant_top_p,
@@ -84,6 +86,18 @@ class AssistantsAPI:
 
     def delete_assistant(self, assistant_id):
         self.client.beta.assistants.delete(assistant_id)
+
+    def upload_file(self, file, purpose="assistants"):
+        return self.client.files.create(file=open(file, "rb"), purpose=purpose)
+
+    def list_files(self, purpose="assistants"):
+        return self.client.files.list(purpose=purpose)
+
+    def retrieve_file(self, file_id):
+        return self.client.files.retrieve(file_id)
+
+    def delete_file(self, file_id):
+        return self.client.files.delete(file_id)
 
 
 api = AssistantsAPI()

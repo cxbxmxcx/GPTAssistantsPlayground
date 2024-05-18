@@ -1,13 +1,17 @@
+import queue
 import re
+import threading
+from contextlib import contextmanager
 
 import gradio as gr
 
-from assistants_api import api
-from assistants_utils import EventHandler
-from assistants_panel import assistants_panel
+from playground.actions_manager import ActionsManager
+from playground.assistants_api import api
+from playground.assistants_panel import assistants_panel
+from playground.assistants_utils import EventHandler
 
 thread = api.create_thread()  # create a new thread everytime this is run
-
+actions_manager = ActionsManager()
 # Chatbot demo with multimodal input (text, markdown, LaTeX, code blocks, image, audio, & video). Plus shows support for streaming text.
 
 
@@ -31,43 +35,108 @@ def print_like_dislike(x: gr.LikeData):
 def ask_assistant(history, message):
     if history is None:
         history = []
+
+    attachments = []
+    content = ""
     for file in message["files"]:
         history.append(((file,), None))
         # upload files to the thread
+        file = api.upload_file(file)
+        attachments += [{"file_id": file.id, "tools": [{"type": "code_interpreter"}]}]
     if message["text"] is not None:
         history.append((message["text"], None))
-        msg = message["text"]
-        api.create_thread_message(thread.id, "user", msg)
+        content = message["text"]
+    if content or attachments:  # only create a message if there is content
+        api.create_thread_message(thread.id, "user", content, attachments=attachments)
 
     return history, gr.MultimodalTextbox(value=None, interactive=False)
 
 
+@contextmanager
+def dummy_stream(*args, **kwargs):
+    yield ["streaming data"]
+
+
 def run(history, assistant_id, logs):
     assistant = api.retrieve_assistant(assistant_id)
-    eh = EventHandler([logs])
+    output_queue = queue.Queue()
+    eh = EventHandler([logs], actions_manager, output_queue)
+
     if assistant is None:
         msg = "Assistant not found."
         history.append((None, msg))
         yield history, msg
         return
 
-    with api.run_stream(
-        thread_id=thread.id,
-        assistant_id=assistant.id,
-        event_handler=eh,
-    ) as stream:
-        while len(eh.images) > 0:
-            history.append((None, (eh.images.pop(),)))
-            history.append(("", None))
-        history[-1][1] = ""
-        for text in stream.text_deltas:
-            history[-1][1] += text
-            history[-1][1] = wrap_latex_with_markdown(history[-1][1])
+    def stream_worker(assistant_id, thread_id, event_handler):
+        with api.run_stream(
+            thread_id=thread_id, assistant_id=assistant_id, event_handler=event_handler
+        ) as stream:
+            for text in stream.text_deltas:
+                output_queue.put(("text", text))
+
+    # Start the initial stream
+    thread_id = thread.id
+    initial_thread = threading.Thread(
+        target=stream_worker, args=(assistant.id, thread_id, eh)
+    )
+    initial_thread.start()
+    history[-1][1] = ""
+    while initial_thread.is_alive() or not output_queue.empty():
+        try:
+            item_type, item_value = output_queue.get(timeout=0.1)
+            if item_type == "text":
+                history[-1][1] += item_value
+                history[-1][1] = wrap_latex_with_markdown(history[-1][1])
             yield history, "".join(eh.logs)
 
+            # # If a new stream is created within the current stream, start a new thread for it
+            # if (
+            #     "new_stream_created" in item_value
+            # ):  # Replace this condition with actual condition
+            #     new_stream_thread = threading.Thread(
+            #         target=stream_worker, args=(assistant.id, new_thread_id, eh)
+            #     )
+            #     new_stream_thread.start()
+
+        except queue.Empty:
+            pass
+
+    # Final flush of images
     while len(eh.images) > 0:
         history.append((None, (eh.images.pop(),)))
         yield history, "".join(eh.logs)
+
+    return None, "".join(eh.logs)
+
+
+# def run(history, assistant_id, logs):
+#     assistant = api.retrieve_assistant(assistant_id)
+#     eh = EventHandler([logs], actions_manager)
+#     if assistant is None:
+#         msg = "Assistant not found."
+#         history.append((None, msg))
+#         yield history, msg
+#         return
+
+#     with api.run_stream(
+#         thread_id=thread.id,
+#         assistant_id=assistant.id,
+#         event_handler=eh,
+#     ) as stream:
+#         while len(eh.images) > 0:
+#             history.append((None, (eh.images.pop(),)))
+#             history.append(("", None))
+#         history[-1][1] = ""
+#         for text in stream.text_deltas:
+#             history[-1][1] += text
+#             history[-1][1] = wrap_latex_with_markdown(history[-1][1])
+#             yield history, "".join(eh.logs)
+
+#     while len(eh.images) > 0:
+#         history.append((None, (eh.images.pop(),)))
+#         yield history, "".join(eh.logs)
+#     return None, "".join(eh.logs)
 
 
 custom_css = """
@@ -114,8 +183,8 @@ with gr.Blocks(css=custom_css) as demo:
         "Assistant Logs", elem_id="assistant_logs", render=False
     )
     with gr.Row():
-        with gr.Column(scale=2):
-            assistant_id = assistants_panel()
+        with gr.Column(scale=4):
+            assistant_id = assistants_panel(actions_manager)
 
         with gr.Column(scale=8):
             chatbot = gr.Chatbot(

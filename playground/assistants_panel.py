@@ -1,9 +1,11 @@
 import gradio as gr
 
-from assistants_api import api
+from playground.assistants_api import api
 
 
-def assistants_panel():
+def assistants_panel(actions_manager):
+    available_actions = actions_manager.get_actions()
+
     def list_assistants():
         assistant_choices = api.list_assistants()
         assistant_options = {a.name: a.id for a in assistant_choices.data}
@@ -12,12 +14,32 @@ def assistants_panel():
 
     def get_tools(tools):
         tools_list = []
+        action_list = []
         for tool in tools:
             if tool.type == "file_search":
                 tools_list.append("File search")
             if tool.type == "code_interpreter":
                 tools_list.append("Code interpreter")
+            if tool.type == "function":
+                action_list.append(tool.function.name)
+        return tools_list, action_list
+
+    def get_tools_by_name(tools):
+        tools_list = []
+        for tool in tools:
+            if tool == "File search":
+                tools_list.append({"type": "file_search"})
+            if tool == "Code interpreter":
+                tools_list.append({"type": "code_interpreter"})
         return tools_list
+
+    def get_actions_by_name(actions):
+        action_list = []
+        for action in actions:
+            for available_action in available_actions:
+                if available_action["name"] == action:
+                    action_list.append(available_action["agent_action"])
+        return action_list
 
     def update_assistant(
         assistant_name,
@@ -25,25 +47,21 @@ def assistants_panel():
         assistant_instructions,
         assistant_model,
         assistant_tools,
-        assistant_files,
+        assistant_actions,
         assistant_resformat,
         assistant_temperature,
         assistant_top_p,
     ):
         if assistant_id is not None and len(assistant_id) > 5:
-            tools = [
-                {"type": "file_search"}
-                if tool == "File search"
-                else {"type": "code_interpreter"}
-                for tool in assistant_tools
-            ]
+            tools = get_tools_by_name(assistant_tools)
+            actions = get_actions_by_name(assistant_actions)
             api.update_assistant(
                 assistant_name,
                 assistant_id,
                 assistant_instructions,
                 assistant_model,
                 tools,
-                assistant_files,
+                actions,
                 assistant_resformat,
                 assistant_temperature,
                 assistant_top_p,
@@ -54,7 +72,7 @@ def assistants_panel():
         assistant_instructions_new,
         assistant_model_new,
         assistant_tools_new,
-        assistant_files_new,
+        assistant_actions_new,
         assistant_resformat_new,
         assistant_temperature_new,
         assistant_top_p_new,
@@ -65,13 +83,18 @@ def assistants_panel():
             else {"type": "code_interpreter"}
             for tool in assistant_tools_new
         ]
+        actions = [
+            action["agent_action"]
+            for action in available_actions
+            if action["name"] in assistant_actions_new
+        ]
         format = "type" if assistant_resformat_new == "JSON object" else "auto"
         new_assistant = api.create_assistant(
             assistant_name_new,
             assistant_instructions_new,
             assistant_model_new,
             tools,
-            assistant_files_new,
+            actions,
             format,
             assistant_temperature_new,
             assistant_top_p_new,
@@ -87,19 +110,20 @@ def assistants_panel():
             else:
                 assistant_id = assistant_key
             assistant = api.retrieve_assistant(assistant_id)
+            actions = []
             if assistant.tools is None:
                 tools = []
             else:
-                tools = get_tools(assistant.tools)
+                tools, actions = get_tools(assistant.tools)
             format = "type" if assistant.response_format == "JSON object" else "auto"
-            files = []
+
             return (
                 assistant.name,
                 assistant.id,
                 assistant.instructions,
                 assistant.model,
                 tools,
-                files,
+                actions,
                 format,
                 assistant.temperature,
                 assistant.top_p,
@@ -121,6 +145,7 @@ def assistants_panel():
                 gr.update(visible=True),
             )
 
+    action_choices = [action["name"] for action in available_actions]
     assistant_options = list_assistants()
     assistant_selected = gr.Dropdown(
         label="Select Assistant",
@@ -149,8 +174,11 @@ def assistants_panel():
         assistant_tools_new = gr.CheckboxGroup(
             label="Tools", choices=["File search", "Code interpreter"], interactive=True
         )
-        assistant_files_new = gr.Textbox(
-            label="Add Files or Functions", placeholder="+ Files, + Functions"
+        # assistant_files_new = gr.Textbox(
+        #     label="Add Files or Functions", placeholder="+ Files, + Functions"
+        # )
+        assistant_actions_new = gr.CheckboxGroup(
+            label="Actions", choices=action_choices, interactive=True
         )
         assistant_resformat_new = gr.Radio(
             label="Response Format",
@@ -189,8 +217,8 @@ def assistants_panel():
         assistant_tools = gr.CheckboxGroup(
             label="Tools", choices=["File search", "Code interpreter"]
         )
-        assistant_files = gr.Textbox(
-            label="Add Files or Functions", placeholder="+ Files, + Functions"
+        assistant_actions = gr.CheckboxGroup(
+            label="Actions", choices=action_choices, interactive=True
         )
         assistant_resformat = gr.Radio(
             label="Response Format",
@@ -214,7 +242,7 @@ def assistants_panel():
             assistant_instructions,
             assistant_model,
             assistant_tools,
-            assistant_files,
+            assistant_actions,
             assistant_resformat,
             assistant_temperature,
             assistant_top_p,
@@ -238,7 +266,7 @@ def assistants_panel():
         assistant_instructions,
         assistant_model,
         assistant_tools,
-        assistant_files,
+        assistant_actions,
         assistant_resformat,
         assistant_temperature,
         assistant_top_p,
@@ -252,7 +280,7 @@ def assistants_panel():
         assistant_instructions_new,
         assistant_model_new,
         assistant_tools_new,
-        assistant_files_new,
+        assistant_actions_new,
         assistant_resformat_new,
         assistant_temperature_new,
         assistant_top_p_new,
@@ -262,7 +290,7 @@ def assistants_panel():
             assistant_instructions_new,
             assistant_model_new,
             assistant_tools_new,
-            assistant_files_new,
+            assistant_actions_new,
             assistant_resformat_new,
             assistant_temperature_new,
             assistant_top_p_new,
@@ -296,7 +324,7 @@ def assistants_panel():
             assistant_instructions_new,
             assistant_model_new,
             assistant_tools_new,
-            assistant_files_new,
+            assistant_actions_new,
             assistant_resformat_new,
             assistant_temperature_new,
             assistant_top_p_new,

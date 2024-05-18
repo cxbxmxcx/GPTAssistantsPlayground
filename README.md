@@ -47,7 +47,7 @@ OPENAI_API_KEY="your api key"
 Then from the project folder, run the interface using:
 
 ```bash
-python playground.py
+python main.py
 ```
 
 Open a browser to the default Gradio port: http://127.0.0.1:7860/
