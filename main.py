@@ -21,6 +21,9 @@ def wrap_latex_with_markdown(text):
     Your job is to identify LaTeX and equations in the text. 
     For each block of LaTeX or equation text you will wrap it with $ if the block is inline,
     or with $$ if the block is on its own line.
+    Examples:
+    inline x^2 + y^2 = z^2 with text -> inline $x^2 + y^2 = z^2$ with text
+    x^2 + y^2 = z^2 -> $$x^2 + y^2 = z^2$$
     """
     user = text
     text = semantic_manager.get_semantic_response(system, user)
