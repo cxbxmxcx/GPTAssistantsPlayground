@@ -1,6 +1,5 @@
 import datetime
 import json
-import textwrap
 
 import openai
 from dotenv import load_dotenv
@@ -50,16 +49,11 @@ def save_binary_response_content(binary_content):
 
 
 class EventHandler(AssistantEventHandler):
-    def __init__(self, logs, action_manager, output_queue) -> None:
+    def __init__(self, action_manager, output_queue) -> None:
         super().__init__()
-        self._logs = logs
         self._images = []
         self.action_manager = action_manager
         self.output_queue = output_queue
-
-    @property
-    def logs(self):
-        return self._logs
 
     @property
     def images(self):
@@ -75,43 +69,46 @@ class EventHandler(AssistantEventHandler):
         if delta.annotations:
             print(delta.annotations, end="", flush=True)
 
-    @override
-    def on_end(self) -> None:
-        print("STREAM DONE ", end="", flush=True)
+    # @override
+    # def on_end(self) -> None:
+    #     print("---|", end="", flush=True)
 
     def on_image_file_done(self, image_file) -> None:
-        print(image_file, end="", flush=True)
         content = client.files.content(image_file.file_id)
         image_file = save_binary_response_content(content.content)
-        self._logs += [f"File saved as {image_file}"]
+        print(f"File saved as {image_file}")
         self._images += [image_file]
 
     def on_tool_call_created(self, tool_call):
-        print(f"\nassistant > {tool_call.type}\n", flush=True)
-        self._logs += [f"\nassistant > {tool_call.type}"]
+        # print(f"\nassistant > {tool_call.type}", end="", flush=True)
         if tool_call.type == "code_interpreter":
-            self._logs += ["\n```python"]
+            print("# >>> Code Interpreter", flush=True)
+        # elif tool_call.type == "function":
+        #     print(f"{tool_call.function.name}(", end="", flush=True)
 
     def on_tool_call_delta(self, delta, snapshot):
         if delta.type == "code_interpreter":
             if delta.code_interpreter.input:
                 print(delta.code_interpreter.input, end="", flush=True)
-                self._logs += [f"{delta.code_interpreter.input}"]
             if delta.code_interpreter.outputs:
-                print("\noutput >", flush=True)
+                print("\nOutput >", flush=True)
                 for output in delta.code_interpreter.outputs:
                     if output.type == "logs":
                         print(f"{output.logs}", flush=True)
-                        self._logs += [f"{output.logs}"]
 
-        if delta.type == "function":
-            if delta.function.arguments:
-                print(delta.function.arguments, end="", flush=True)
-                self._logs += [f"{delta.function.arguments}"]
+        # if delta.type == "function":
+        #     if delta.function.arguments:
+        #         print(
+        #             delta.function.arguments,
+        #             end="",
+        #             flush=True,
+        #         )
 
-    def on_tool_call_done(self, tool_call) -> None:
-        if tool_call.type == "code_interpreter":
-            self._logs += ["\n```\n"]
+    # def on_tool_call_done(self, tool_call) -> None:
+    #     if tool_call.type == "code_interpreter":
+    #         print("# <<< Code Interpreter", flush=True)
+    # elif tool_call.type == "function":
+    #     print(")", flush=True)
 
     @override
     def on_event(self, event):
@@ -130,17 +127,20 @@ class EventHandler(AssistantEventHandler):
                 if action:
                     args = json.loads(tool.function.arguments)
                     output = action["pointer"](**args)
+
+                    if hasattr(output, "data"):
+                        for el in output.data:
+                            if hasattr(el, "content"):
+                                for c in el.content:
+                                    if hasattr(c, "image_file"):
+                                        self.on_image_file_done(c.image_file)
+
                     tool_outputs.append(
                         {"tool_call_id": tool.id, "output": str(output)}
                     )
-                    self._logs += [
-                        textwrap.dedent(f"""
-                        <details>
-                            <summary>action: {tool.function.name}(args={tool.function.arguments}</summary>
-                            <pre>{str(output)}</pre>
-                        </details>
-                    """)
-                    ]
+                    print(
+                        f"action: {tool.function.name}(args={tool.function.arguments}) -> {str(output)}"
+                    )
 
         # Submit all tool_outputs at the same time
         self.submit_tool_outputs(tool_outputs, run_id)
@@ -151,9 +151,7 @@ class EventHandler(AssistantEventHandler):
             thread_id=self.current_run.thread_id,
             run_id=self.current_run.id,
             tool_outputs=tool_outputs,
-            event_handler=EventHandler(
-                self._logs, self.action_manager, self.output_queue
-            ),
+            event_handler=EventHandler(self.action_manager, self.output_queue),
         ) as stream:
             for text in stream.text_deltas:
                 self.output_queue.put(("text", text))

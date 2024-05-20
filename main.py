@@ -1,4 +1,5 @@
 import queue
+import re
 import threading
 from contextlib import contextmanager
 
@@ -8,36 +9,44 @@ from playground.actions_manager import ActionsManager
 from playground.assistants_api import api
 from playground.assistants_panel import assistants_panel
 from playground.assistants_utils import EventHandler
+from playground.environment_manager import EnvironmentManager
+from playground.logging import Logger
 from playground.semantic_manager import SemanticManager
 
 thread = api.create_thread()  # create a new thread everytime this is run
 actions_manager = ActionsManager()
 semantic_manager = SemanticManager()
-# Chatbot demo with multimodal input (text, markdown, LaTeX, code blocks, image, audio, & video). Plus shows support for streaming text.
+
+# create code environment
+env_manager = EnvironmentManager()
+env_manager.install_requirements()
+
+logger = Logger("logs.txt")
+logger.reset_logs()
 
 
 def wrap_latex_with_markdown(text):
-    system = """You are a LaTeX genius and equation genius!,
-    Your job is to identify LaTeX and equations in the text. 
-    For each block of LaTeX or equation text you will wrap it with $ if the block is inline,
-    or with $$ if the block is on its own line.
-    Examples:
-    inline x^2 + y^2 = z^2 with text -> inline $x^2 + y^2 = z^2$ with text
-    x^2 + y^2 = z^2 -> $$x^2 + y^2 = z^2$$
-    """
-    user = text
-    text = semantic_manager.get_semantic_response(system, user)
-    return text
-    # # Regular expression to find LaTeX enclosed in [] or ()
-    # bracket_pattern = re.compile(r"\[(.*?)\]")
-    # parenthesis_pattern = re.compile(r"\((.*?)\)")
-
-    # # Replace LaTeX within brackets with Markdown inline math
-    # text = bracket_pattern.sub(r"$$\1$$", text)
-
-    # # Replace LaTeX within parentheses with Markdown inline math
-    # text = parenthesis_pattern.sub(r"$$\1$$", text)
+    # system = """You are a LaTeX genius and equation genius!,
+    # Your job is to identify LaTeX and equations in the text.
+    # For each block of LaTeX or equation text you will wrap it with $ if the block is inline,
+    # or with $$ if the block is on its own line.
+    # Examples:
+    # inline x^2 + y^2 = z^2 with text -> inline $x^2 + y^2 = z^2$ with text
+    # x^2 + y^2 = z^2 -> $$x^2 + y^2 = z^2$$
+    # """
+    # user = text
+    # text = semantic_manager.get_semantic_response(system, user)
     # return text
+    # Regular expression to find LaTeX enclosed in [] or ()
+    bracket_pattern = re.compile(r"\[(.*?)\]")
+    parenthesis_pattern = re.compile(r"\((.*?)\)")
+
+    # Replace LaTeX within brackets with Markdown inline math
+    text = bracket_pattern.sub(r"$$\1$$", text)
+
+    # Replace LaTeX within parentheses with Markdown inline math
+    text = parenthesis_pattern.sub(r"$$\1$$", text)
+    return text
 
 
 def print_like_dislike(x: gr.LikeData):
@@ -69,15 +78,15 @@ def dummy_stream(*args, **kwargs):
     yield ["streaming data"]
 
 
-def run(history, assistant_id, logs):
+def run(history, assistant_id):
     assistant = api.retrieve_assistant(assistant_id)
     output_queue = queue.Queue()
-    eh = EventHandler([logs], actions_manager, output_queue)
+    eh = EventHandler(actions_manager, output_queue)
 
     if assistant is None:
         msg = "Assistant not found."
         history.append((None, msg))
-        yield history, msg
+        yield history
         return
 
     def stream_worker(assistant_id, thread_id, event_handler):
@@ -100,19 +109,19 @@ def run(history, assistant_id, logs):
             if item_type == "text":
                 history[-1][1] += item_value
                 # history[-1][1] = wrap_latex_with_markdown(history[-1][1])
-            yield history, "".join(eh.logs)
+            yield history
 
         except queue.Empty:
             pass
-    history[-1][1] = wrap_latex_with_markdown(history[-1][1])
-    yield history, "".join(eh.logs)
+    # history[-1][1] = wrap_latex_with_markdown(history[-1][1])
+    yield history
     # Final flush of images
     while len(eh.images) > 0:
         history.append((None, (eh.images.pop(),)))
-        yield history, "".join(eh.logs)
+        yield history
 
     initial_thread.join()
-    return None, "".join(eh.logs)
+    return None
 
 
 # Custom CSS
@@ -155,48 +164,50 @@ body, html {
 """
 
 with gr.Blocks(css=custom_css) as demo:
-    # assistant_logs = gr.TextArea(label="Assistant Logs", placeholder="Logs here...", elem_id="assistant_logs", interactive=False, render=False)
-    assistant_logs = gr.Markdown(
-        "Assistant Logs", elem_id="assistant_logs", render=False
-    )
-    with gr.Row():
+    with gr.Tab(label="Playground"):
+        with gr.Row():
+            with gr.Column(scale=4):
+                assistant_id = assistants_panel(actions_manager)
+
+            with gr.Column(scale=8):
+                chatbot = gr.Chatbot(
+                    [],
+                    elem_id="chatbot",
+                    bubble_full_width=True,
+                    container=True,
+                    avatar_images=["avatar1.png", "avatar2.png"],
+                    layout="panel",
+                )
+
+                chat_input = gr.MultimodalTextbox(
+                    interactive=True,
+                    file_types=["image"],
+                    placeholder="Enter message or upload file...",
+                    show_label=False,
+                    elem_id="chat_input",
+                )
+
+                chat_msg = chat_input.submit(
+                    ask_assistant, [chatbot, chat_input], [chatbot, chat_input]
+                )
+                bot_msg = chat_msg.then(
+                    run,
+                    [chatbot, assistant_id],
+                    [chatbot],
+                    api_name="assistant_response",
+                )
+                bot_msg.then(
+                    lambda: gr.MultimodalTextbox(interactive=True), None, [chat_input]
+                )
+
+                chatbot.like(print_like_dislike, None, None)
+    with gr.Tab(label="Logs"):
         with gr.Column(scale=4):
-            assistant_id = assistants_panel(actions_manager)
-
-        with gr.Column(scale=8):
-            chatbot = gr.Chatbot(
-                [],
-                elem_id="chatbot",
-                bubble_full_width=True,
-                container=True,
-                avatar_images=["avatar1.png", "avatar2.png"],
-                layout="panel",
+            # Add logs
+            logs = gr.Code(
+                label="", language="python", interactive=False, container=True, lines=45
             )
-
-            chat_input = gr.MultimodalTextbox(
-                interactive=True,
-                file_types=["image"],
-                placeholder="Enter message or upload file...",
-                show_label=False,
-                elem_id="chat_input",
-            )
-
-            chat_msg = chat_input.submit(
-                ask_assistant, [chatbot, chat_input], [chatbot, chat_input]
-            )
-            bot_msg = chat_msg.then(
-                run,
-                [chatbot, assistant_id, assistant_logs],
-                [chatbot, assistant_logs],
-                api_name="assistant_response",
-            )
-            bot_msg.then(
-                lambda: gr.MultimodalTextbox(interactive=True), None, [chat_input]
-            )
-
-            chatbot.like(print_like_dislike, None, None)
-        with gr.Column(scale=2):
-            assistant_logs.render()
+            demo.load(logger.read_logs, None, logs, every=1)
 
 demo.queue()
 
