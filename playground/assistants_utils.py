@@ -65,13 +65,8 @@ class EventHandler(AssistantEventHandler):
 
     @override
     def on_text_delta(self, delta, snapshot):
-        # print(delta.value, flush=True)
         if delta.annotations:
             print(delta.annotations, end="", flush=True)
-
-    # @override
-    # def on_end(self) -> None:
-    #     print("---|", end="", flush=True)
 
     def on_image_file_done(self, image_file) -> None:
         content = client.files.content(image_file.file_id)
@@ -80,11 +75,8 @@ class EventHandler(AssistantEventHandler):
         self._images += [image_file]
 
     def on_tool_call_created(self, tool_call):
-        # print(f"\nassistant > {tool_call.type}", end="", flush=True)
         if tool_call.type == "code_interpreter":
             print("# >>> Code Interpreter", flush=True)
-        # elif tool_call.type == "function":
-        #     print(f"{tool_call.function.name}(", end="", flush=True)
 
     def on_tool_call_delta(self, delta, snapshot):
         if delta.type == "code_interpreter":
@@ -95,20 +87,6 @@ class EventHandler(AssistantEventHandler):
                 for output in delta.code_interpreter.outputs:
                     if output.type == "logs":
                         print(f"{output.logs}", flush=True)
-
-        # if delta.type == "function":
-        #     if delta.function.arguments:
-        #         print(
-        #             delta.function.arguments,
-        #             end="",
-        #             flush=True,
-        #         )
-
-    # def on_tool_call_done(self, tool_call) -> None:
-    #     if tool_call.type == "code_interpreter":
-    #         print("# <<< Code Interpreter", flush=True)
-    # elif tool_call.type == "function":
-    #     print(")", flush=True)
 
     @override
     def on_event(self, event):
