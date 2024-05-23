@@ -153,9 +153,9 @@ def convert_to_html(node):
     elif node["type"] == "Decorator":
         html += '<span class="node decorator" data-symbol="◇">◇</span>'
     elif node["type"] == "Action":
-        html += f'<span class="node action">{node["function"]}</span>'
+        html += f'<span class="node action">{node["name"]}</span>'
     elif node["type"] == "Condition":
-        html += f'<span class="node condition">{node["function"]}</span>'
+        html += f'<span class="node condition">{node["name"]}</span>'
 
     # If the node has children, process them recursively
     if node["children"]:
@@ -180,21 +180,23 @@ class BehaviorTreeNode:
         self.name = name
         self.type = node_type
         self.children = []
-        self.function = None  # New property to hold function/condition
+        self.prompt = ""  # New property to hold function/condition
 
     def to_dict(self):
-        return {
+        dict = {
             "name": self.name,
             "type": self.type,
             "children": [child.to_dict() for child in self.children],
-            "function": self.function,
         }
+        if self.prompt:
+            dict["prompt"] = self.prompt
+        return dict
 
     @staticmethod
     def from_dict(node_dict):
         name = node_dict["name"]
         node_type = node_dict["type"]
-        function = node_dict.get("function", None)
+        prompt = node_dict.get("prompt", "")
         if node_type == "Selector":
             node = Selector(name)
         elif node_type == "Sequence":
@@ -209,7 +211,7 @@ class BehaviorTreeNode:
             node = Parallel(name)
         else:
             node = BehaviorTreeNode(name, node_type)
-        node.function = function
+        node.prompt = prompt
         node.children = [
             BehaviorTreeNode.from_dict(child) for child in node_dict["children"]
         ]
@@ -352,13 +354,13 @@ def add_child_node(parent_name, child_type, child_name):
     return json_tree, json_to_html_tree(json_tree), gr.update(choices=node_list)
 
 
-def set_node_function(node_name, function):
+def set_node_prompt(node_name, prompt):
     global root_node
     target_node = find_node(root_node, node_name)
     if not target_node:
         return f"Node '{node_name}' not found", None, []
 
-    target_node.function = function
+    target_node.prompt = prompt
     json_tree = json.dumps(root_node.to_dict(), indent=2)
     return (
         json_tree,
@@ -429,12 +431,9 @@ def behavior_panel():
                 )
                 add_child_button = gr.Button("Add Child Node")
 
-            with gr.Group(visible=False) as function_node_panel:
-                function_selection_dropdown = gr.Dropdown(
-                    choices=["Action 1", "Action 2", "Condition 1", "Condition 2"],
-                    label="Select Function/Condition",
-                )
-                set_function_button = gr.Button("Set Function/Condition")
+            with gr.Group(visible=False) as prompt_node_panel:
+                prompt_text = gr.Textbox(label="Action/Condition Prompt", lines=3)
+                set_function_button = gr.Button("Set Action/Condition Prompt")
 
             btree_display = gr.HTML(label="Rendered HTML")
 
@@ -447,7 +446,7 @@ def behavior_panel():
     select_node_dropdown.change(
         create_node_panel,
         inputs=[select_node_dropdown],
-        outputs=[node_creation_panel, child_node_panel, function_node_panel],
+        outputs=[node_creation_panel, child_node_panel, prompt_node_panel],
     )
     create_button.click(
         add_node,
@@ -457,7 +456,7 @@ def behavior_panel():
     select_node_dropdown.change(
         update_child_or_function_controls,
         inputs=[select_node_dropdown],
-        outputs=[child_node_panel, function_node_panel],
+        outputs=[child_node_panel, prompt_node_panel],
     )
     add_child_button.click(
         add_child_node,
@@ -465,8 +464,8 @@ def behavior_panel():
         outputs=[tree_json_display, btree_display, select_node_dropdown],
     )
     set_function_button.click(
-        set_node_function,
-        inputs=[select_node_dropdown, function_selection_dropdown],
+        set_node_prompt,
+        inputs=[select_node_dropdown, prompt_text],
         outputs=[tree_json_display, btree_display, select_node_dropdown],
     )
 
