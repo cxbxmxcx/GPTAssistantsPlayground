@@ -1,3 +1,5 @@
+import time
+
 import gradio as gr
 
 from playground.assistants_api import api
@@ -11,6 +13,8 @@ def assistants_panel(actions_manager):
         assistant_options = {a.name: a.id for a in assistant_choices.data}
         assistant_options["Create New Assistant"] = "new"
         return assistant_options
+
+    assistant_options = list_assistants()
 
     def get_tools(tools):
         tools_list = []
@@ -88,7 +92,7 @@ def assistants_panel(actions_manager):
             for action in available_actions
             if action["name"] in assistant_actions_new
         ]
-        format = "type" if assistant_resformat_new == "JSON object" else "auto"
+        format = "auto"  # "type" if assistant_resformat_new == "JSON object" else "auto"  TODO: fix this
         new_assistant = api.create_assistant(
             assistant_name_new,
             assistant_instructions_new,
@@ -102,6 +106,7 @@ def assistants_panel(actions_manager):
         return new_assistant.id
 
     def get_assistant_details(assistant_key):
+        assistant_options = list_assistants()
         if assistant_key == "Create New Assistant":
             return "", "", "", "gpt-4o", [], "", "", 1, 1
         else:
@@ -109,6 +114,7 @@ def assistants_panel(actions_manager):
                 assistant_id = assistant_options[assistant_key]
             else:
                 assistant_id = assistant_key
+
             assistant = api.retrieve_assistant(assistant_id)
             actions = []
             if assistant.tools is None:
@@ -146,7 +152,6 @@ def assistants_panel(actions_manager):
             )
 
     action_choices = [action["name"] for action in available_actions]
-    assistant_options = list_assistants()
     assistant_selected = gr.Dropdown(
         label="Select Assistant",
         choices=assistant_options.keys(),
@@ -295,6 +300,7 @@ def assistants_panel(actions_manager):
             assistant_temperature_new,
             assistant_top_p_new,
         )
+        time.sleep(2)  # wait for assistant to be created
         assistant_options = list_assistants()
         return (
             gr.update(choices=list(assistant_options.keys()), value=new_assistant_id),

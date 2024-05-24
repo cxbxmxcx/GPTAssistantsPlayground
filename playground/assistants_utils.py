@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from openai import AssistantEventHandler
 from typing_extensions import override
 
+from playground.actions_manager import ActionsManager
+
 load_dotenv()
 
 # OpenAI client initialization
@@ -49,10 +51,10 @@ def save_binary_response_content(binary_content):
 
 
 class EventHandler(AssistantEventHandler):
-    def __init__(self, action_manager, output_queue) -> None:
+    def __init__(self, output_queue) -> None:
         super().__init__()
         self._images = []
-        self.action_manager = action_manager
+        self.action_manager = ActionsManager()  # singleton
         self.output_queue = output_queue
 
     @property
@@ -129,7 +131,7 @@ class EventHandler(AssistantEventHandler):
             thread_id=self.current_run.thread_id,
             run_id=self.current_run.id,
             tool_outputs=tool_outputs,
-            event_handler=EventHandler(self.action_manager, self.output_queue),
+            event_handler=EventHandler(self.output_queue),
         ) as stream:
             for text in stream.text_deltas:
                 self.output_queue.put(("text", text))

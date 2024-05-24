@@ -3,6 +3,7 @@ import functools
 import importlib.util
 import inspect
 import os
+import threading
 
 
 def handle_semantic_function_call(prompt, agent):
@@ -111,7 +112,23 @@ def agent_action(func):
     return wrapper
 
 
-class ActionsManager:
+class SingletonMeta(type):
+    """
+    This is a thread-safe implementation of Singleton.
+    """
+
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            with threading.Lock():
+                if cls not in cls._instances:
+                    instance = super().__call__(*args, **kwargs)
+                    cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
+class ActionsManager(metaclass=SingletonMeta):
     def __init__(self):
         self.actions = []  # Initialize an empty list to store actions
         self.actions_folder = os.path.join(

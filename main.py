@@ -78,52 +78,51 @@ def dummy_stream(*args, **kwargs):
     yield ["streaming data"]
 
 
-def run(history, assistant_ids):
-    for assistant_id in assistant_ids:
-        assistant = api.retrieve_assistant(assistant_id)
-        output_queue = queue.Queue()
-        eh = EventHandler(actions_manager, output_queue)
+def run(history, assistant_id):
+    assistant = api.retrieve_assistant(assistant_id)
+    output_queue = queue.Queue()
+    eh = EventHandler(output_queue)
 
-        if assistant is None:
-            msg = "Assistant not found."
-            history.append((None, msg))
-            yield history
-            return
-
-        def stream_worker(assistant_id, thread_id, event_handler):
-            with api.run_stream(
-                thread_id=thread_id,
-                assistant_id=assistant_id,
-                event_handler=event_handler,
-            ) as stream:
-                for text in stream.text_deltas:
-                    output_queue.put(("text", text))
-
-        # Start the initial stream
-        thread_id = thread.id
-        initial_thread = threading.Thread(
-            target=stream_worker, args=(assistant.id, thread_id, eh)
-        )
-        initial_thread.start()
-        history[-1][1] = ""
-        while initial_thread.is_alive() or not output_queue.empty():
-            try:
-                item_type, item_value = output_queue.get(timeout=0.1)
-                if item_type == "text":
-                    history[-1][1] += item_value
-                    # history[-1][1] = wrap_latex_with_markdown(history[-1][1])
-                yield history
-
-            except queue.Empty:
-                pass
-        # history[-1][1] = wrap_latex_with_markdown(history[-1][1])
+    if assistant is None:
+        msg = "Assistant not found."
+        history.append((None, msg))
         yield history
-        # Final flush of images
-        while len(eh.images) > 0:
-            history.append((None, (eh.images.pop(),)))
+        return
+
+    def stream_worker(assistant_id, thread_id, event_handler):
+        with api.run_stream(
+            thread_id=thread_id,
+            assistant_id=assistant_id,
+            event_handler=event_handler,
+        ) as stream:
+            for text in stream.text_deltas:
+                output_queue.put(("text", text))
+
+    # Start the initial stream
+    thread_id = thread.id
+    initial_thread = threading.Thread(
+        target=stream_worker, args=(assistant.id, thread_id, eh)
+    )
+    initial_thread.start()
+    history[-1][1] = ""
+    while initial_thread.is_alive() or not output_queue.empty():
+        try:
+            item_type, item_value = output_queue.get(timeout=0.1)
+            if item_type == "text":
+                history[-1][1] += item_value
+                # history[-1][1] = wrap_latex_with_markdown(history[-1][1])
             yield history
 
-        initial_thread.join()
+        except queue.Empty:
+            pass
+    # history[-1][1] = wrap_latex_with_markdown(history[-1][1])
+    yield history
+    # Final flush of images
+    while len(eh.images) > 0:
+        history.append((None, (eh.images.pop(),)))
+        yield history
+
+    initial_thread.join()
     return None
 
 
@@ -167,26 +166,11 @@ body, html {
 """
 
 
-def assistant_mode_change(assistant_mode):
-    if assistant_mode.value == "Single Assistant":
-        return gr.update(visible=True), gr.update(visible=False)
-    else:
-        return gr.update(visible=False), gr.update(visible=True)
-
-
 with gr.Blocks(css=custom_css) as demo:
     with gr.Tab(label="Playground"):
         with gr.Row():
             with gr.Column(scale=4):
-                assistant_mode = gr.Radio(
-                    choices=["Single Assistant", "Multiple Assistants"],
-                    label="Assistant Mode",
-                )
-                with gr.Column(scale=8) as single_assistnant_panel:
-                    assistant_ids = [assistants_panel(actions_manager)]
-                with gr.Column(scale=8) as multiple_assistnant_panel:
-                    # assistant_ids = multi_assistants_panel()
-                    pass
+                assistant_id = assistants_panel(actions_manager)
 
             with gr.Column(scale=8):
                 chatbot = gr.Chatbot(
@@ -211,7 +195,7 @@ with gr.Blocks(css=custom_css) as demo:
                 )
                 bot_msg = chat_msg.then(
                     run,
-                    [chatbot, assistant_ids],
+                    [chatbot, assistant_id],
                     [chatbot],
                     api_name="assistant_response",
                 )
@@ -220,9 +204,6 @@ with gr.Blocks(css=custom_css) as demo:
                 )
 
                 chatbot.like(print_like_dislike, None, None)
-    # with gr.Tab(label="Behavior Tree Designer"):
-    #     with gr.Column(scale=4):
-    #         behavior_panel()
 
     with gr.Tab(label="Logs"):
         with gr.Column(scale=4):
@@ -231,12 +212,6 @@ with gr.Blocks(css=custom_css) as demo:
                 label="", language="python", interactive=False, container=True, lines=45
             )
             demo.load(logger.read_logs, None, logs, every=1)
-
-    assistant_mode.change(
-        assistant_mode_change,
-        [assistant_mode],
-        [single_assistnant_panel, multiple_assistnant_panel],
-    )
 
 demo.queue()
 

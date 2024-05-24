@@ -112,6 +112,10 @@ def test_action_manager_create_assistant(api):
     assert assistant.top_p == top_p
 
 
+def text_create_assistant_with_actions(api):
+    pass
+
+
 def test_delete_test_assistants(api):
     assistants = api.list_assistants()
     for assistant in assistants.data:
@@ -119,3 +123,12 @@ def test_delete_test_assistants(api):
             api.delete_assistant(assistant.id)
     assistants = api.list_assistants()
     assert len(assistants.data) > 0
+
+
+def test_call_assistant(api):
+    assistants = api.list_assistants()
+    assistant = assistants.data[0]
+    response = api.call_assistant(assistant.id, "Hello, world!")
+    assert response is not None
+    assert response.text is not None
+    assert response.text != ""

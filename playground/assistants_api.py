@@ -1,5 +1,10 @@
+import queue
+import threading
+
 import openai
 from dotenv import load_dotenv
+
+from playground.assistants_utils import EventHandler
 
 load_dotenv()
 
@@ -7,6 +12,7 @@ load_dotenv()
 class AssistantsAPI:
     def __init__(self):
         self.client = openai.OpenAI()
+        self.actions_manager = None
 
     def create_thread(self):
         return self.client.beta.threads.create()
@@ -99,21 +105,69 @@ class AssistantsAPI:
     def delete_file(self, file_id):
         return self.client.files.delete(file_id)
 
+    # def call_assistant(self, assistant_id, message):
+    #     try:
+    #         thread = self.client.beta.threads.create()
+    #         run = self.client.beta.threads.runs.create_and_poll(
+    #             thread_id=thread.id,
+    #             assistant_id=assistant_id,
+    #             instructions=message,
+    #         )
+    #         if run.status == "completed":
+    #             messages = self.client.beta.threads.messages.list(thread_id=thread.id)
+    #             return messages
+    #         else:
+    #             return run.status
+    #     except Exception as e:
+    #         return str(e)
+
     def call_assistant(self, assistant_id, message):
-        try:
-            thread = self.client.beta.threads.create()
-            run = self.client.beta.threads.runs.create_and_poll(
-                thread_id=thread.id,
+        assistant = self.retrieve_assistant(assistant_id)
+        thread = self.create_thread()
+        output_queue = queue.Queue()
+        eh = EventHandler(output_queue)
+
+        if assistant is None:
+            msg = "Assistant not found."
+            return msg
+
+        def stream_worker(assistant_id, thread_id, event_handler):
+            with self.run_stream(
+                thread_id=thread_id,
                 assistant_id=assistant_id,
-                instructions=message,
-            )
-            if run.status == "completed":
-                messages = self.client.beta.threads.messages.list(thread_id=thread.id)
-                return messages
-            else:
-                return run.status
-        except Exception as e:
-            return str(e)
+                event_handler=event_handler,
+            ) as stream:
+                for text in stream.text_deltas:
+                    output_queue.put(("text", text))
+
+        # Start the initial stream
+        thread_id = thread.id
+        initial_thread = threading.Thread(
+            target=stream_worker, args=(assistant.id, thread_id, eh)
+        )
+        initial_thread.start()
+        reply = ""
+        while initial_thread.is_alive() or not output_queue.empty():
+            try:
+                item_type, item_value = output_queue.get(timeout=0.1)
+                if item_type == "text":
+                    reply += item_value
+                    # history[-1][1] = wrap_latex_with_markdown(history[-1][1])
+                # yield history
+
+            except queue.Empty:
+                pass
+        # history[-1][1] = wrap_latex_with_markdown(history[-1][1])
+        # yield history
+        # Final flush of images
+        initial_thread.join()
+        message = {"text": reply, "files": []}
+        while len(eh.images) > 0:
+            # history.append((None, (eh.images.pop(),)))
+            # yield history
+            message["files"].append(eh.images.pop())
+
+        return message
 
 
 api = AssistantsAPI()

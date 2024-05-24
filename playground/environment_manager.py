@@ -57,8 +57,12 @@ class EnvironmentManager:
             [python_executable, filepath], capture_output=True, text=True
         )
 
-        print(f"Output: {result.stdout}")
-        print(f"Errors: {result.stderr}")
+        # print(f"Output: {result.stdout}")
+        # print(f"Errors: {result.stderr}")
+        if (result.stderr is None or result.stderr == "") and (
+            result.stdout is None or result.stdout == ""
+        ):
+            return "The process appears to have run successfully.", ""
         return result.stdout, result.stderr
 
     def run_shell_command(self, command):
@@ -78,8 +82,8 @@ class EnvironmentManager:
             capture_output=True,
             text=True,
         )
-        print(f"Output: {result.stdout}")
-        print(f"Errors: {result.stderr}")
+        # print(f"Output: {result.stdout}")
+        # print(f"Errors: {result.stderr}")
         return result.stdout, result.stderr
 
 
