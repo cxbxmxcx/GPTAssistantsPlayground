@@ -129,6 +129,8 @@ ENV/
 env.bak/
 venv.bak/
 
+assistant_outputs/
+
 logs.txt
 
 # Spyder project settings

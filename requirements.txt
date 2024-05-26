@@ -2,3 +2,5 @@ openai
 gradio
 python-dotenv
 pytest
+youtube-transcript-api
+pytrends

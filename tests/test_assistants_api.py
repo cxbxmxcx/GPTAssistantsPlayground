@@ -132,3 +132,8 @@ def test_call_assistant(api):
     assert response is not None
     assert response.text is not None
     assert response.text != ""
+
+
+def test_list_files(api):
+    files = api.list_files(purpose=None)
+    assert len(files.data) > 0

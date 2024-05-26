@@ -59,6 +59,13 @@ class AssistantsAPI:
         assistants = self.client.beta.assistants.list(limit=100)
         return assistants
 
+    def get_assistant_by_name(self, name):
+        assistants = self.list_assistants()
+        for assistant in assistants.data:
+            if assistant.name.lower().startswith(name.lower()):
+                return assistant
+        return None
+
     def retrieve_assistant(self, assistant_id):
         try:
             assistant = self.client.beta.assistants.retrieve(assistant_id)
@@ -105,27 +112,15 @@ class AssistantsAPI:
     def delete_file(self, file_id):
         return self.client.files.delete(file_id)
 
-    # def call_assistant(self, assistant_id, message):
-    #     try:
-    #         thread = self.client.beta.threads.create()
-    #         run = self.client.beta.threads.runs.create_and_poll(
-    #             thread_id=thread.id,
-    #             assistant_id=assistant_id,
-    #             instructions=message,
-    #         )
-    #         if run.status == "completed":
-    #             messages = self.client.beta.threads.messages.list(thread_id=thread.id)
-    #             return messages
-    #         else:
-    #             return run.status
-    #     except Exception as e:
-    #         return str(e)
-
-    def call_assistant(self, assistant_id, message):
-        assistant = self.retrieve_assistant(assistant_id)
+    def call_assistant(self, thread, assistant_id, message):
         thread = self.create_thread()
+        return self.call_assistant_with_thread(thread, assistant_id, message)
+
+    def call_assistant_with_thread(self, thread, assistant_id, message):
+        assistant = self.retrieve_assistant(assistant_id)
         output_queue = queue.Queue()
         eh = EventHandler(output_queue)
+        thread_id = thread.id
 
         if assistant is None:
             msg = "Assistant not found."

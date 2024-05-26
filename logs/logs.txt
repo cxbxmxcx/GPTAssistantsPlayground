@@ -1,0 +1,30 @@
+Running on local URL:  http://127.0.0.1:7860
+
+To create a public link, set `share=True` in `launch()`.
+# >>> Code Interpreter
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Define the linear function
+def linear_function(x):
+    return 3*x + 6
+
+# Generate x values
+x = np.linspace(-10, 10, 400)
+# Generate y values
+y = linear_function(x)
+
+# Create the plot
+plt.figure(figsize=(8, 6))
+plt.plot(x, y, label='y = 3x + 6', color='blue')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('Plot of y = 3x + 6')
+plt.axhline(0, color='black',linewidth=0.5)
+plt.axvline(0, color='black',linewidth=0.5)
+plt.legend()
+plt.grid(True)
+plt.show()
+Output >
+assistant > File saved as assistant_outputs\file_20240526150025.png
+File saved as assistant_outputs\file_20240526150025.png

@@ -18,6 +18,31 @@ def list_uploaded_files(purpose="assistants"):
 
 
 @agent_action
+def list_all_working_files():
+    """Lists all the uploaded files for the given purpose."""
+    files = api.list_files(purpose=None).data
+    files = [
+        {"id": file.id, "filename": file.filename, "purpose": file.purpose}
+        for file in files
+    ]
+    return json.dumps(files)
+
+
+@agent_action
+def download_working_file_and_save(file_id, filename):
+    """Downloads the file with the given file_id and saves it with the given name."""
+    if file_id is None:
+        return "You must supply a file_id to download."
+
+    file = api.retrieve_file(file_id)
+    if not file:
+        return f"Unable to retrieve file with ID {file_id}."
+    with open(filename, "wb") as f:
+        f.write(file.content)
+    return f"File with ID {file_id} downloaded and saved as {filename}."
+
+
+@agent_action
 def delete_uploaded_file(file_id):
     """Deletes the uploaded file with the given file_id."""
     deleted = api.delete_file(file_id)

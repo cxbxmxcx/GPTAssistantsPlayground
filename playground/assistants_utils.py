@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 
 import openai
 from dotenv import load_dotenv
@@ -12,6 +13,8 @@ load_dotenv()
 
 # OpenAI client initialization
 client = openai.OpenAI()
+
+OUTPUT_FOLDER = "assistant_outputs"
 
 
 def save_binary_response_content(binary_content):
@@ -41,13 +44,14 @@ def save_binary_response_content(binary_content):
     # Create a unique file name using the timestamp
     timestamp = get_timestamp()
     file_name = f"file_{timestamp}.{extension}"
+    file_path = os.path.join(OUTPUT_FOLDER, file_name)
 
     # Save the content to the file
-    with open(file_name, "wb") as file:
+    with open(file_path, "wb") as file:
         file.write(binary_content)
-        print(f"File saved as {file_name}")
+        print(f"File saved as {file_path}")
 
-    return file_name
+    return file_path
 
 
 class EventHandler(AssistantEventHandler):
