@@ -223,4 +223,6 @@ demo.queue()
 
 
 if __name__ == "__main__":
-    demo.launch(share=True, inbrowser=True)
+    demo.launch()
+    # use the following to launch in browser with a shareable link
+    #demo.launch(share=True, inbrowser=True)
