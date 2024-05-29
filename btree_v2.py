@@ -103,4 +103,4 @@ tree = py_trees.trees.BehaviourTree(root)
 for i in range(1000):
     print(f"Tick {i + 1}")
     tree.tick()
-    time.sleep(10)  # Simulate time between ticks
+    time.sleep(300)  # Simulate time between ticks
