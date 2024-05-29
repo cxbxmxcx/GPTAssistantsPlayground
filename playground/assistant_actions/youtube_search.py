@@ -17,7 +17,7 @@ class YoutubeSearch:
         encoded_search = urllib.parse.quote_plus(self.search_terms)
         BASE_URL = "https://youtube.com"
         # This filter shows only videos uploaded today, sorted by relevance and between 4 and 20 minutes long
-        url = f"{BASE_URL}/results?search_query={encoded_search}&sp=EgYIAhABGAM%253D"
+        url = f"{BASE_URL}/results?search_query={encoded_search}&sp=EgIIAQ%253D%253D"
         response = requests.get(url).text
         while "ytInitialData" not in response:
             response = requests.get(url).text

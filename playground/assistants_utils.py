@@ -60,6 +60,7 @@ class EventHandler(AssistantEventHandler):
         self._images = []
         self.action_manager = ActionsManager()  # singleton
         self.output_queue = output_queue
+        self.internal_context = ""
 
     @property
     def images(self):
@@ -88,11 +89,13 @@ class EventHandler(AssistantEventHandler):
         if delta.type == "code_interpreter":
             if delta.code_interpreter.input:
                 print(delta.code_interpreter.input, end="", flush=True)
+                self.internal_context += delta.code_interpreter.input
             if delta.code_interpreter.outputs:
                 print("\nOutput >", flush=True)
                 for output in delta.code_interpreter.outputs:
                     if output.type == "logs":
                         print(f"{output.logs}", flush=True)
+                        self.internal_context += output.logs
 
     @override
     def on_event(self, event):
@@ -125,6 +128,7 @@ class EventHandler(AssistantEventHandler):
                     print(
                         f"action: {tool.function.name}(args={tool.function.arguments}) -> {str(output)}"
                     )
+                    self.internal_context += str(output)
 
         # Submit all tool_outputs at the same time
         self.submit_tool_outputs(tool_outputs, run_id)

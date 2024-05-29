@@ -5,6 +5,9 @@ import openai
 from dotenv import load_dotenv
 
 from playground.assistants_utils import EventHandler
+import agentops
+
+from playground.utils import id_to_uuid
 
 load_dotenv()
 
@@ -110,9 +113,12 @@ class AssistantsAPI:
         return self.client.files.retrieve(file_id)
 
     def delete_file(self, file_id):
-        return self.client.files.delete(file_id)
+        try:
+            return self.client.files.delete(file_id)
+        except Exception:
+            return "Unable to delete file with ID {file_id}."
 
-    def call_assistant(self, thread, assistant_id, message):
+    def call_assistant(self, assistant_id, message):
         thread = self.create_thread()
         return self.call_assistant_with_thread(thread, assistant_id, message)
 
@@ -125,15 +131,20 @@ class AssistantsAPI:
         if assistant is None:
             msg = "Assistant not found."
             return msg
+        prompt = message
+        self.create_thread_message(thread.id, "user", message)
 
         def stream_worker(assistant_id, thread_id, event_handler):
-            with self.run_stream(
-                thread_id=thread_id,
-                assistant_id=assistant_id,
-                event_handler=event_handler,
-            ) as stream:
-                for text in stream.text_deltas:
-                    output_queue.put(("text", text))
+            try:
+                with self.run_stream(
+                    thread_id=thread_id,
+                    assistant_id=assistant_id,
+                    event_handler=event_handler,
+                ) as stream:
+                    for text in stream.text_deltas:
+                        output_queue.put(("text", text))
+            except Exception as e:
+                print(e)
 
         # Start the initial stream
         thread_id = thread.id
@@ -156,11 +167,22 @@ class AssistantsAPI:
         # yield history
         # Final flush of images
         initial_thread.join()
+
         message = {"text": reply, "files": []}
         while len(eh.images) > 0:
             # history.append((None, (eh.images.pop(),)))
             # yield history
             message["files"].append(eh.images.pop())
+
+        agentops.record(
+            agentops.LLMEvent(
+                thread_id=id_to_uuid(thread_id),
+                agent_id=id_to_uuid(assistant_id),
+                prompt=prompt,
+                completion=message["text"] + eh.internal_context,
+                model=assistant.model,
+            )
+        )
 
         return message
 

@@ -182,9 +182,10 @@ def assistants_panel(actions_manager):
         # assistant_files_new = gr.Textbox(
         #     label="Add Files or Functions", placeholder="+ Files, + Functions"
         # )
-        assistant_actions_new = gr.CheckboxGroup(
-            label="Actions", choices=action_choices, interactive=True
-        )
+        with gr.Accordion("Actions", open=False):
+            assistant_actions_new = gr.CheckboxGroup(
+                label="Actions", choices=action_choices, interactive=True
+            )
         assistant_resformat_new = gr.Radio(
             label="Response Format",
             choices=["JSON object", "Plain text"],
@@ -222,9 +223,10 @@ def assistants_panel(actions_manager):
         assistant_tools = gr.CheckboxGroup(
             label="Tools", choices=["File search", "Code interpreter"]
         )
-        assistant_actions = gr.CheckboxGroup(
-            label="Actions", choices=action_choices, interactive=True
-        )
+        with gr.Accordion("Actions", open=False):
+            assistant_actions = gr.CheckboxGroup(
+                label="Actions", choices=action_choices, interactive=True
+            )
         assistant_resformat = gr.Radio(
             label="Response Format",
             choices=["JSON object", "Plain text"],

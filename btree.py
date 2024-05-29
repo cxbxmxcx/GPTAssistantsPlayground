@@ -1,91 +1,84 @@
-import threading
 import time
 
 import py_trees
 
-from playground.assistants_api import api
+from playground.behavior_trees import (
+    create_assistant_action,
+    create_assistant_condition,
+)
 
-
-# Define the ActionWithThread class
-class ActionWrapper(py_trees.behaviour.Behaviour):
-    def __init__(self, name, action_function=None):
-        super(ActionWrapper, self).__init__(name=name)
-        self.thread = None
-        self.thread_running = False
-        self.thread_success = False
-        self.action_function = action_function
-
-    def setup(self):
-        # This is called once at the beginning to setup any necessary state or resources
-        print("%s.setup()" % self.name)
-        return py_trees.common.Status.SUCCESS
-
-    def initialise(self):
-        # This is called once each time the behavior is started
-        print("%s.initialise()" % self.name)
-        self.thread_running = True
-        self.thread_success = False
-        self.thread = threading.Thread(target=self.long_running_process)
-        self.thread.start()
-
-    def long_running_process(self):
-        # Simulate a long-running process
-        try:
-            print("%s: Thread started, running process..." % self.name)
-            result = self.action_function()
-            print(result)
-            self.thread_success = True
-            print("%s: Thread completed successfully." % self.name)
-        except Exception as e:
-            print("%s: Exception in thread: %s" % (self.name, str(e)))
-        finally:
-            self.thread_running = False
-
-    def update(self):
-        # This is called every tick to update the status of the behavior
-        print("%s.update()" % self.name)
-        if self.thread_running:
-            return py_trees.common.Status.RUNNING
-        else:
-            return (
-                py_trees.common.Status.SUCCESS
-                if self.thread_success
-                else py_trees.common.Status.FAILURE
-            )
-
-    def terminate(self, new_status):
-        # This is called once each time the behavior terminates
-        print("%s.terminate(%s)" % (self.name, new_status))
-        if self.thread is not None:
-            self.thread.join()
-        self.thread = None
-        self.thread_running = False
-        self.thread_success = False
-
-
+search_term = "GPT Agents"
 # Create the root node (sequence)
 root = py_trees.composites.Sequence("RootSequence", memory=True)
 
-thread = api.create_thread()
-assistant = api.get_assistant_by_name("manager")
-message = "check the status of the thread, if there are no recent user messages, do nothing and return the word 'success'"
-
-action_function = lambda: api.call_assistant_with_thread(thread, assistant.id, message)
-
-# Create an instance of ActionWithThread and add it to the root node
-long_running_action = ActionWithThread(
-    name="LongRunningAction", action_function=action_function
+file_condition = create_assistant_condition(
+    condition_name="Check File Date",
+    assistant_name="File Manager",
+    assistant_instructions="""
+    load the file youtube_current.txt.
+    it will contain a date and time in the form HH-MM-DD-YY
+    where HH (01-24) is the hour, DD is the month (01 - 31), MM is the day (01 - 12) and YY is the year (24)
+    Return just the word SUCCESS if the date and time is earlier than the current date and time, 
+    Return just the word FAILURE if the date and time is the same or later than the current date and time.
+    """,
 )
-root.add_child(long_running_action)
+root.add_child(file_condition)
+
+search_youtube_action = create_assistant_action(
+    action_name="Search YouTube",
+    assistant_name="YouTube Researcher",
+    assistant_instructions=f"""
+    Search Term: {search_term}
+    Use the query "{search_term}" to search for videos on YouTube.
+    then for each video download the transcript and summarize it for relevance to {search_term}
+    be sure to include a link to each of the videos,
+    and then save all summarizations to a file called youtube_transcripts.txt
+    """,
+)
+root.add_child(search_youtube_action)
+
+write_post_action = create_assistant_action(
+    action_name="Write Post",
+    assistant_name="Twitter Post Writer",
+    assistant_instructions=f"""
+    Load the file called youtube_transcripts.txt,
+    analyze the contents for references to {search_term} and then select
+    the most exciting and relevant video to post on Twitter.
+    Then write a Twitter post that is relevant to the video,
+    and include a link to the video, along
+    with exciting highlights or mentions, 
+    and save it to a file called youtube_twitter_post.txt.
+    """,
+)
+root.add_child(write_post_action)
+
+post_action = create_assistant_action(
+    action_name="Post",
+    assistant_name="Social Media Assistant",
+    assistant_instructions="""
+    Load the file called youtube_twitter_post.txt and post the content to Twitter.
+    If the content is empty please do not post anything.
+    """,
+)
+root.add_child(post_action)
+
+file_write_action = create_assistant_action(
+    action_name="Write File Date",
+    assistant_name="File Manager",
+    assistant_instructions="""
+    write the current date and time to a file called youtube_current.txt.
+    Format the date and time in the form HH-MM-DD-YY
+    where HH (01-24) is the hour, DD is the month (01 - 31), MM is the day (01 - 12) and YY is the year (24)
+    Be sure to increment the hour by 1 each time this action is called.    
+    """,
+)
+root.add_child(file_write_action)
 
 # Create the behavior tree
 tree = py_trees.trees.BehaviourTree(root)
 
 # Tick the tree to run it
-for i in range(100):
+for i in range(1000):
     print(f"Tick {i + 1}")
     tree.tick()
-    time.sleep(5)  # Simulate time between ticks
-
-# Add a blackboard watcher to visualize the tree
-# py_trees.display.render_dot_tree(tree.root)
+    time.sleep(300)  # Simulate time between ticks

@@ -165,8 +165,13 @@ body, html {
 }
 """
 
+theme = gr.themes.Default()
 
-with gr.Blocks(css=custom_css) as demo:
+# theme = gr.themes.Glass()
+# theme = gr.themes.Monochrome()
+# theme = gr.themes.Soft()
+
+with gr.Blocks(css=custom_css, theme=theme) as demo:
     with gr.Tab(label="Playground"):
         with gr.Row():
             with gr.Column(scale=4):
@@ -212,6 +217,7 @@ with gr.Blocks(css=custom_css) as demo:
                 label="", language="python", interactive=False, container=True, lines=45
             )
             demo.load(logger.read_logs, None, logs, every=1)
+
 
 demo.queue()
 

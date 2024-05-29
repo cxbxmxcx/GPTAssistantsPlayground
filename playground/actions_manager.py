@@ -190,6 +190,9 @@ class ActionsManager(metaclass=SingletonMeta):
                         decorated_actions.append(
                             {
                                 "name": node.name,
+                                "group": os.path.splitext(os.path.basename(full_path))[
+                                    0
+                                ],
                                 "pointer": function_pointer,
                                 "agent_action": getattr(
                                     function_pointer, "_agent_action", None

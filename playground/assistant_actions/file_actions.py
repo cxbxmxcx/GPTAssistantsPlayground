@@ -14,7 +14,7 @@ def save_file(filename, content):
     :param content: The content to save in the file.
     """
     file_path = os.path.join(OUTPUT_FOLDER, filename)
-    with open(file_path, "w") as file:
+    with open(file_path, "w", encoding="utf-8") as file:
         file.write(content)
     print(f"File '{filename}' saved successfully.")
 
@@ -32,7 +32,7 @@ def load_file(filename):
         print(f"File '{filename}' does not exist.")
         return None
 
-    with open(file_path, "r") as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         content = file.read()
     print(f"File '{filename}' loaded successfully.")
     return content
