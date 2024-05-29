@@ -49,6 +49,10 @@ class ActionWrapper(py_trees.behaviour.Behaviour):
             agentops.start_session()
             result = self.function_wrapper()
             print(result)
+            if "FAILURE" in result["text"]:
+                agentops.end_session("Fail")
+                print("%s: Thread completed with failure." % self.name)
+                return
 
             if self.is_condition:
                 self.thread_success = "SUCCESS" in result["text"]
