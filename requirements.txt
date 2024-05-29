@@ -1,6 +1,7 @@
-openai
 gradio
+openai
+agentops
+wikipedia
 python-dotenv
 pytest
 youtube-transcript-api
-pytrends
