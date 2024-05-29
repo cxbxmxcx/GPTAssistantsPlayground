@@ -2,6 +2,7 @@ gradio
 openai
 agentops
 wikipedia
+twitter-api-client
 python-dotenv
 pytest
 youtube-transcript-api
