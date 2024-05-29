@@ -1,5 +1,0 @@
-Running on local URL:  http://127.0.0.1:7861
-
-To create a public link, set `share=True` in `launch()`.
-action: post_to_twitter(args={"content":"Hello there from the OpenAI Assistants API, I am a Social Media Assistant."}) -> None
-assistant > 

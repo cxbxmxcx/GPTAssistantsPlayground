@@ -10,7 +10,7 @@ class Logger:
     class Terminal:
         def __init__(self, filename):
             self.terminal = sys.stdout
-            self.log = open(filename, "w")
+            self.log = open(filename, "w", encoding="utf-8")
 
         def write(self, message):
             self.terminal.write(message)
@@ -38,14 +38,14 @@ class Logger:
             os.makedirs(LOG_DIR)
 
     def reset_logs(self):
-        with open(self.filename, "w") as file:
+        with open(self.filename, "w", encoding="utf-8") as file:
             file.truncate(0)
 
     def read_logs(self):
         sys.stdout.flush()
 
         # Read the entire content of the log file
-        with open(self.filename, "r") as f:
+        with open(self.filename, "r", encoding="utf-8") as f:
             log_content = f.readlines()
 
         # Filter out lines containing null characters
