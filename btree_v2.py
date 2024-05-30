@@ -64,6 +64,7 @@ write_post_action = create_assistant_action(
     Load the file called youtube_transcripts.txt,
     analyze the contents for references to search term at the top and then select
     the most exciting and relevant video to post on Twitter.
+    Avoid videos that discuss making money, real estate, crypto currency or are too promotional.
     Then write a Twitter post that is relevant to the video,
     and include a link to the video, along
     with exciting highlights or mentions, 
@@ -103,4 +104,4 @@ tree = py_trees.trees.BehaviourTree(root)
 for i in range(1000):
     print(f"Tick {i + 1}")
     tree.tick()
-    time.sleep(300)  # Simulate time between ticks
+    time.sleep(30)  # Simulate time between ticks
