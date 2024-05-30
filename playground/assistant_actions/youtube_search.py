@@ -16,8 +16,8 @@ class YoutubeSearch:
     def _search(self):
         encoded_search = urllib.parse.quote_plus(self.search_terms)
         BASE_URL = "https://youtube.com"
-        # This filter shows only videos uploaded today, sorted by relevance and between 4 and 20 minutes long
-        url = f"{BASE_URL}/results?search_query={encoded_search}&sp=EgIIAQ%253D%253D"
+        # This filter shows only videos uploaded in the last hour, sorted by relevance
+        url = f"{BASE_URL}/results?search_query={encoded_search}&sp=EgQIARAB"
         response = requests.get(url).text
         while "ytInitialData" not in response:
             response = requests.get(url).text
@@ -97,11 +97,29 @@ class YoutubeSearch:
 
 
 @agent_action
-def search_youtube_videos(query: str, max_results=5):
+def search_youtube_videos(query: str, max_results=10):
     """Searches for videos on YouTube based on the query string and returns the video titles and IDs."""
     results = YoutubeSearch(query, max_results=max_results)
     videos = results.videos
     return [{"title": video["title"], "id": video["id"]} for video in videos]
+
+
+search_cache = []
+
+
+@agent_action
+def search_new_youtube_videos(query: str, max_results=10):
+    """Searches for new videos on YouTube based on the query string and returns the video titles and IDs."""
+    global search_cache
+    results = YoutubeSearch(query, max_results=max_results)
+    videos = results.videos
+    new_videos = [
+        {"title": video["title"], "id": video["id"]}
+        for video in videos
+        if video["id"] not in search_cache
+    ]
+    search_cache += [video["id"] for video in videos]
+    return new_videos
 
 
 @agent_action

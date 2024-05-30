@@ -65,7 +65,7 @@ class AssistantsAPI:
     def get_assistant_by_name(self, name):
         assistants = self.list_assistants()
         for assistant in assistants.data:
-            if assistant.name.lower().startswith(name.lower()):
+            if assistant.name and assistant.name.lower().startswith(name.lower()):
                 return assistant
         return None
 
