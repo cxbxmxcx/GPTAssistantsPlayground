@@ -182,7 +182,7 @@ def assistants_panel(actions_manager):
         # assistant_files_new = gr.Textbox(
         #     label="Add Files or Functions", placeholder="+ Files, + Functions"
         # )
-        with gr.Accordion("Actions", open=False):
+        with gr.Accordion("Actions", open=False, elem_id="actionsnew"):
             assistant_actions_new = gr.CheckboxGroup(
                 label="Actions", choices=action_choices, interactive=True
             )
@@ -223,7 +223,7 @@ def assistants_panel(actions_manager):
         assistant_tools = gr.CheckboxGroup(
             label="Tools", choices=["File search", "Code interpreter"]
         )
-        with gr.Accordion("Actions", open=False):
+        with gr.Accordion("Actions", open=False, elem_id="actions"):
             assistant_actions = gr.CheckboxGroup(
                 label="Actions", choices=action_choices, interactive=True
             )

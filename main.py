@@ -163,13 +163,22 @@ body, html {
     overflow-y: auto; /* Enable vertical scrollbar when content exceeds max-height */
     box-sizing: border-box; /* Ensure padding and border are included in the height calculation */
 }
+
+#actionsnew { 
+    color: #000000; 
+ }
+
+#actions { 
+    color: #000000; 
+ }
 """
 
-theme = gr.themes.Default()
+# theme = gr.themes.Default()
 
 # theme = gr.themes.Glass()
 # theme = gr.themes.Monochrome()
 # theme = gr.themes.Soft()
+theme = "gstaff/sketch"
 
 with gr.Blocks(css=custom_css, theme=theme) as demo:
     with gr.Tab(label="Playground"):
@@ -225,4 +234,4 @@ demo.queue()
 if __name__ == "__main__":
     demo.launch()
     # use the following to launch in browser with a shareable link
-    #demo.launch(share=True, inbrowser=True)
+    # demo.launch(share=True, inbrowser=True)
