@@ -1,6 +1,5 @@
 gradio
 openai
-agentops
 wikipedia
 twitter-api-client
 python-dotenv

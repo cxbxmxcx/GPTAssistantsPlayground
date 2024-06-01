@@ -4,7 +4,6 @@ import threading
 import py_trees
 
 from playground.assistants_api import api
-import agentops
 
 
 # Define the FunctionWrapper class
@@ -45,12 +44,9 @@ class ActionWrapper(py_trees.behaviour.Behaviour):
         # Simulate a long-running process
         try:
             print("%s: Thread started, running process..." % self.name)
-            agentops.init()
-            agentops.start_session()
             result = self.function_wrapper()
             print(result)
             if "FAILURE" in result["text"]:
-                agentops.end_session("Fail")
                 print("%s: Thread completed with failure." % self.name)
                 return
 
@@ -59,11 +55,9 @@ class ActionWrapper(py_trees.behaviour.Behaviour):
             else:
                 self.thread_success = True
 
-            agentops.end_session("Success")
             print("%s: Thread completed successfully." % self.name)
         except Exception as e:
             print("%s: Exception in thread: %s" % (self.name, str(e)))
-            agentops.end_session("Fail")
         finally:
             self.thread_running = False
 
@@ -101,6 +95,28 @@ def create_assistant_condition(condition_name, assistant_name, assistant_instruc
     assistant = api.get_assistant_by_name(assistant_name)
     function_wrapper = FunctionWrapper(
         api.call_assistant, assistant.id, assistant_instructions
+    )
+    return ActionWrapper(
+        name=condition_name, function_wrapper=function_wrapper, is_condition=True
+    )
+
+
+def create_assistant_action_on_thread(
+    thread, action_name, assistant_name, assistant_instructions
+):
+    assistant = api.get_assistant_by_name(assistant_name)
+    function_wrapper = FunctionWrapper(
+        api.call_assistant_with_thread, thread, assistant.id, assistant_instructions
+    )
+    return ActionWrapper(name=action_name, function_wrapper=function_wrapper)
+
+
+def create_assistant_condition_on_thread(
+    thread, condition_name, assistant_name, assistant_instructions
+):
+    assistant = api.get_assistant_by_name(assistant_name)
+    function_wrapper = FunctionWrapper(
+        api.call_assistant_with_thread, thread, assistant.id, assistant_instructions
     )
     return ActionWrapper(
         name=condition_name, function_wrapper=function_wrapper, is_condition=True

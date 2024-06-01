@@ -5,9 +5,7 @@ import openai
 from dotenv import load_dotenv
 
 from playground.assistants_utils import EventHandler
-import agentops
 
-from playground.utils import id_to_uuid
 
 load_dotenv()
 
@@ -173,16 +171,6 @@ class AssistantsAPI:
             # history.append((None, (eh.images.pop(),)))
             # yield history
             message["files"].append(eh.images.pop())
-
-        agentops.record(
-            agentops.LLMEvent(
-                thread_id=id_to_uuid(thread_id),
-                agent_id=id_to_uuid(assistant_id),
-                prompt=prompt,
-                completion=message["text"] + eh.internal_context,
-                model=assistant.model,
-            )
-        )
 
         return message
 
