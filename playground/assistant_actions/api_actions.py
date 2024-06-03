@@ -2,6 +2,7 @@ import json
 
 from playground.actions_manager import ActionsManager, agent_action
 from playground.assistants_api import api
+import os
 
 
 @agent_action
@@ -66,6 +67,54 @@ def list_assistants(self):
     return assistants
 
 
+def get_tools(tools):
+    """Get the tools from the given tools list."""
+    tools_list = []
+    for tool in tools:
+        if hasattr(tool, "name"):
+            tools_list.append(tool["name"])
+        elif hasattr(tool, "function"):
+            tools_list.append(tool.function.name)
+        elif hasattr(tool, "type"):
+            tools_list.append(tool.type)
+    return tools_list
+
+
+@agent_action
+def get_assistant_as_json(assistant_id):
+    """Get the assistant with the given assistant_id as a JSON string."""
+    assistant = api.retrieve_assistant(assistant_id)
+    if not assistant:
+        return f"Unable to retrieve assistant with ID {assistant_id}."
+    name = assistant.name
+    instructions = assistant.instructions
+    model = assistant.model
+    tools = get_tools(assistant.tools)
+    response_format = assistant.response_format
+    temperature = assistant.temperature
+    top_p = assistant.top_p
+    assistant = {
+        "id": assistant_id,
+        "name": name,
+        "instructions": instructions,
+        "model": model,
+        "tools": tools,
+        "response_format": response_format,
+        "temperature": temperature,
+        "top_p": top_p,
+    }
+    return json.dumps(assistant)
+
+
+@agent_action
+def list_installable_assistants():
+    """Lists all the installable assistants."""
+    filepath = os.path.join(os.path.dirname(__file__), "assistants.json")
+    with open(filepath, "r", encoding="utf-8") as file:
+        assistants = json.load(file)
+    return assistants
+
+
 @agent_action
 def call_assistant(assistant_id, message):
     """Calls the assistant with the given assistant_id and message."""
@@ -76,10 +125,20 @@ def call_assistant(assistant_id, message):
 def create_assistant(
     assistant_name,
     assistant_instructions,
+    model,
+    tools,
+    response_format,
+    temperature,
+    top_p,
 ):
     """Creates an assistant with the given parameters.
     assistant_name: str, name of the assistant
     assistant_instructions: str, instructions for the assistant
+    model: str, model to use for the assistant
+    tools: list, list of tools to use for the assistant
+    response_format: str, response format for the assistant
+    temperature: float, temperature for the assistant
+    top_p: float, top p value for the assistant
     """
     actions_manager = ActionsManager()
     available_actions = actions_manager.get_actions()
@@ -110,13 +169,6 @@ def create_manager_assistant():
     instructions = """
     You are an assistant designed to manager other assistants. 
     To do so, you will need to call list_assistants every time a new conversation starts.  
-    This will let you know which assistants you have access to and what they can do.   
-
-    You will ALWAYS delegate user requests to the appropriate assistant you identified earlier using list_assistants. 
-    Delegating a request can be done by using call_assistant.
-
-    Use the following functions to test any code you receive:
-    run_code to run all Python code before showing the user
-    run_shell-command to install any required dependencies, example 'pip install pygame'
+    This will let you know which assistants you have access to and what they can do.     
     """
     return create_assistant(name, instructions)

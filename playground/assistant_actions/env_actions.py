@@ -3,7 +3,7 @@ from playground.environment_manager import EnvironmentManager
 
 
 @agent_action
-def run_code(code, filename=None):
+def run_python_code(code, filename=None):
     """Runs the given code in a virtual environment."""
     env_manager = EnvironmentManager()
     code_output, code_errors = env_manager.run_code(code, filename=filename)

@@ -13,3 +13,7 @@ def id_to_uuid(custom_id):
     generated_uuid = uuid.UUID(bytes=byte_sequence[:16])
 
     return generated_uuid
+
+
+def filter_properties(obj, properties):
+    return {prop: getattr(obj, prop) for prop in properties if hasattr(obj, prop)}

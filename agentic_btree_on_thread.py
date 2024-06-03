@@ -12,9 +12,6 @@ from playground.assistants_api import api
 # Create the root node (sequence)
 root = py_trees.composites.Sequence("RootSequence", memory=True)
 
-# selector = py_trees.composites.Selector("Hacker Team Selector", memory=True)
-# root.add_child(selector)
-
 
 thread = api.create_thread()
 challenge = textwrap.dedent("""
