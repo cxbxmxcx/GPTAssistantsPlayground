@@ -2,6 +2,7 @@ import queue
 import re
 import threading
 from contextlib import contextmanager
+import os
 
 import gradio as gr
 
@@ -12,6 +13,7 @@ from playground.assistants_utils import EventHandler
 from playground.environment_manager import EnvironmentManager
 from playground.logging import Logger
 from playground.semantic_manager import SemanticManager
+from playground.constants import ASSISTANTS_WORKING_FOLDER
 
 thread = api.create_thread()  # create a new thread everytime this is run
 actions_manager = ActionsManager()
@@ -78,6 +80,27 @@ def dummy_stream(*args, **kwargs):
     yield ["streaming data"]
 
 
+def extract_file_paths(text):
+    # Regular expression pattern to match file paths
+    # This pattern matches typical file paths in Windows and Unix-like systems
+    pattern = r"(?:[a-zA-Z]:\\)?(?:[a-zA-Z0-9_-]+\\)*[a-zA-Z0-9_-]+\.[a-zA-Z0-9]+|(?:\/[a-zA-Z0-9_-]+)+\/?"
+
+    # Find all matching file paths in the text
+    file_paths = re.findall(pattern, text)
+
+    unique_file_paths = list(set(file_paths))
+
+    return unique_file_paths
+
+
+def get_file_path(file):
+    if os.path.isabs(file):
+        return file
+
+    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, file)
+    return file_path
+
+
 def run(history, assistant_id):
     assistant = api.retrieve_assistant(assistant_id)
     output_queue = queue.Queue()
@@ -117,6 +140,14 @@ def run(history, assistant_id):
             pass
     # history[-1][1] = wrap_latex_with_markdown(history[-1][1])
     yield history
+
+    files = extract_file_paths(history[-1][1])
+    for file in files:
+        file_path = get_file_path(file)
+        if os.path.exists(file_path):
+            history.append((None, (file_path,)))
+        yield history
+
     # Final flush of images
     while len(eh.images) > 0:
         history.append((None, (eh.images.pop(),)))
@@ -171,6 +202,18 @@ body, html {
 #actions { 
     color: #000000; 
  }
+ 
+video {
+    width: 300px;  /* initial width */
+    height: 200px; /* initial height */
+    transition: width 0.5s ease, height 0.5s ease;
+    cursor: pointer;
+}
+video:hover {
+    width: auto;
+    height: auto;
+    max-width: 100%; /* ensures it doesn’t exceed the container's width */
+}
 """
 
 # theme = gr.themes.Default()

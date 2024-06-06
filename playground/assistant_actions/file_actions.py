@@ -1,8 +1,7 @@
 import os
 
 from playground.actions_manager import agent_action
-
-OUTPUT_FOLDER = "assistant_outputs"
+from playground.constants import ASSISTANTS_WORKING_FOLDER
 
 
 @agent_action
@@ -13,10 +12,10 @@ def save_file(filename, content):
     :param filename: The name of the file including extension.
     :param content: The content to save in the file.
     """
-    file_path = os.path.join(OUTPUT_FOLDER, filename)
+    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, filename)
     with open(file_path, "w", encoding="utf-8") as file:
         file.write(content)
-    print(f"File '{filename}' saved successfully.")
+    return f"File '{filename}' saved successfully."
 
 
 @agent_action
@@ -27,7 +26,7 @@ def load_file(filename):
     :param filename: The name of the file including extension.
     :return: The content of the file.
     """
-    file_path = os.path.join(OUTPUT_FOLDER, filename)
+    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, filename)
     if not os.path.exists(file_path):
         print(f"File '{filename}' does not exist.")
         return None
@@ -45,12 +44,12 @@ def delete_file(filename):
 
     :param filename: The name of the file including extension.
     """
-    file_path = os.path.join(OUTPUT_FOLDER, filename)
+    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, filename)
     if os.path.exists(file_path):
         os.remove(file_path)
-        print(f"File '{filename}' deleted successfully.")
+        return f"File '{filename}' deleted successfully."
     else:
-        print(f"File '{filename}' does not exist.")
+        return f"File '{filename}' does not exist."
 
 
 @agent_action
@@ -60,12 +59,23 @@ def create_folder(foldername):
 
     :param foldername: The name of the folder to create.
     """
-    folder_path = os.path.join(OUTPUT_FOLDER, foldername)
+    folder_path = os.path.join(ASSISTANTS_WORKING_FOLDER, foldername)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
-        print(f"Folder '{foldername}' created successfully.")
+        return f"Folder '{foldername}' created successfully."
     else:
-        print(f"Folder '{foldername}' already exists.")
+        return f"Folder '{foldername}' already exists."
+
+
+@agent_action
+def list_files():
+    """
+    List all files in the working folder.
+
+    :return: A list of file names.
+    """
+    files = os.listdir(ASSISTANTS_WORKING_FOLDER)
+    return files
 
 
 # # Example usage:

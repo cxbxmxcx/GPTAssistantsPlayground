@@ -130,6 +130,7 @@ env.bak/
 venv.bak/
 
 assistant_outputs/
+assistants_working_folder/
 
 logs.txt
 

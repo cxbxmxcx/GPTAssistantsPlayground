@@ -8,13 +8,12 @@ from openai import AssistantEventHandler
 from typing_extensions import override
 
 from playground.actions_manager import ActionsManager
+from playground.constants import ASSISTANTS_WORKING_FOLDER
 
 load_dotenv()
 
 # OpenAI client initialization
 client = openai.OpenAI()
-
-OUTPUT_FOLDER = "assistant_outputs"
 
 
 def save_binary_response_content(binary_content):
@@ -44,7 +43,7 @@ def save_binary_response_content(binary_content):
     # Create a unique file name using the timestamp
     timestamp = get_timestamp()
     file_name = f"file_{timestamp}.{extension}"
-    file_path = os.path.join(OUTPUT_FOLDER, file_name)
+    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, file_name)
 
     # Save the content to the file
     with open(file_path, "wb") as file:
@@ -135,11 +134,14 @@ class EventHandler(AssistantEventHandler):
 
     def submit_tool_outputs(self, tool_outputs, run_id):
         # Use the submit_tool_outputs_stream helper
-        with client.beta.threads.runs.submit_tool_outputs_stream(
-            thread_id=self.current_run.thread_id,
-            run_id=self.current_run.id,
-            tool_outputs=tool_outputs,
-            event_handler=EventHandler(self.output_queue),
-        ) as stream:
-            for text in stream.text_deltas:
-                self.output_queue.put(("text", text))
+        try:
+            with client.beta.threads.runs.submit_tool_outputs_stream(
+                thread_id=self.current_run.thread_id,
+                run_id=self.current_run.id,
+                tool_outputs=tool_outputs,
+                event_handler=EventHandler(self.output_queue),
+            ) as stream:
+                for text in stream.text_deltas:
+                    self.output_queue.put(("text", text))
+        except Exception as e:
+            self.output_queue.put(("text", str(e)))
