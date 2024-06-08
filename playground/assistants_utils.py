@@ -8,12 +8,44 @@ from openai import AssistantEventHandler
 from typing_extensions import override
 
 from playground.actions_manager import ActionsManager
-from playground.constants import ASSISTANTS_WORKING_FOLDER
+from playground.global_values import GlobalValues
 
 load_dotenv()
 
 # OpenAI client initialization
 client = openai.OpenAI()
+
+
+def get_tools(tools):
+    tools_list = []
+    action_list = []
+    for tool in tools:
+        if tool.type == "file_search":
+            tools_list.append("File search")
+        if tool.type == "code_interpreter":
+            tools_list.append("Code interpreter")
+        if tool.type == "function":
+            action_list.append(tool.function.name)
+    return tools_list, action_list
+
+
+def get_tools_by_name(tools):
+    tools_list = []
+    for tool in tools:
+        if tool == "File search":
+            tools_list.append({"type": "file_search"})
+        if tool == "Code interpreter":
+            tools_list.append({"type": "code_interpreter"})
+    return tools_list
+
+
+def get_actions_by_name(actions, available_actions):
+    action_list = []
+    for action in actions:
+        for available_action in available_actions:
+            if available_action["name"] == action:
+                action_list.append(available_action["agent_action"])
+    return action_list
 
 
 def save_binary_response_content(binary_content):
@@ -43,7 +75,7 @@ def save_binary_response_content(binary_content):
     # Create a unique file name using the timestamp
     timestamp = get_timestamp()
     file_name = f"file_{timestamp}.{extension}"
-    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, file_name)
+    file_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, file_name)
 
     # Save the content to the file
     with open(file_path, "wb") as file:

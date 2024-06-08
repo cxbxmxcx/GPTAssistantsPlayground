@@ -1,8 +1,9 @@
 import cv2
+import re
 from moviepy.editor import VideoClip, concatenate_videoclips, VideoFileClip
 from playground.actions_manager import agent_action
 import os
-from playground.constants import ASSISTANTS_WORKING_FOLDER
+from playground.global_values import GlobalValues
 
 
 def safe_eval(expr):
@@ -11,10 +12,36 @@ def safe_eval(expr):
     return eval(expr, allowed_names)
 
 
+def convert_resolution_string(resolution_str):
+    """
+    Converts a resolution string in the format 'widthxheight' into a tuple (width, height).
+
+    Args:
+    resolution_str (str): The resolution string to be converted.
+
+    Returns:
+    tuple: A tuple containing width and height as integers.
+    """
+    # Regular expression to match the resolution string pattern
+    pattern = r"^(\d+)x(\d+)$"
+
+    match = re.match(pattern, resolution_str)
+
+    if match:
+        width = int(match.group(1))
+        height = int(match.group(2))
+        return (width, height)
+    else:
+        raise ValueError("Input string is not in the correct format 'widthxheight'")
+
+
 def convert_to_tuple(value):
     try:
         # Attempt to evaluate the string as a tuple
-        evaluated_value = safe_eval(value)
+        if "x" in value or "X" in value:
+            evaluated_value = convert_resolution_string(value)
+        else:
+            evaluated_value = safe_eval(value)
         if isinstance(evaluated_value, tuple):
             return evaluated_value
         else:
@@ -103,7 +130,7 @@ def zoom_at(
     zoom_factor = float(zoom_factor)
     duration = int(duration)
     fps = int(fps)
-    image_path = os.path.join(ASSISTANTS_WORKING_FOLDER, image_filename)
+    image_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, image_filename)
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = image.shape
@@ -118,7 +145,7 @@ def zoom_at(
 
     clip = VideoClip(make_frame, duration=duration)
 
-    output_path = os.path.join(ASSISTANTS_WORKING_FOLDER, output_filename)
+    output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
     clip.write_videofile(output_path, fps=fps)
     return output_filename
 
@@ -142,7 +169,7 @@ def pan_to(image_filename, duration, start_center, end_center, output_filename, 
     duration = int(duration)
     fps = int(fps)
 
-    image_path = os.path.join(ASSISTANTS_WORKING_FOLDER, image_filename)
+    image_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, image_filename)
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = image.shape
@@ -195,7 +222,7 @@ def pan_to(image_filename, duration, start_center, end_center, output_filename, 
         return cv2.resize(frame, (width, height))
 
     clip = VideoClip(make_frame, duration=duration)
-    output_path = os.path.join(ASSISTANTS_WORKING_FOLDER, output_filename)
+    output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
     clip.write_videofile(output_path, fps=fps)
     return output_filename
 
@@ -221,7 +248,7 @@ def zoom_from(
     duration = int(duration)
     zoom_factor = float(zoom_factor)
     fps = int(fps)
-    image_path = os.path.join(ASSISTANTS_WORKING_FOLDER, image_filename)
+    image_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, image_filename)
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = image.shape
@@ -232,7 +259,7 @@ def zoom_from(
         return zoom(image, factor, center)
 
     clip = VideoClip(make_frame, duration=duration)
-    output_path = os.path.join(ASSISTANTS_WORKING_FOLDER, output_filename)
+    output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
     clip.write_videofile(output_path, fps=fps)
     return output_filename
 
@@ -258,7 +285,7 @@ def boom_to(
     duration = int(duration)
     fps = int(fps)
 
-    image_path = os.path.join(ASSISTANTS_WORKING_FOLDER, image_filename)
+    image_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, image_filename)
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = image.shape
@@ -284,7 +311,7 @@ def boom_to(
         return cv2.resize(frame, (width, height))
 
     clip = VideoClip(make_frame, duration=duration)
-    output_path = os.path.join(ASSISTANTS_WORKING_FOLDER, output_filename)
+    output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
     clip.write_videofile(output_path, fps=fps)
     return output_filename
 
@@ -309,7 +336,7 @@ def rack_focus(image_filename, duration, start_blur, end_blur, output_filename, 
     start_blur = int(start_blur)
     end_blur = int(end_blur)
     fps = int(fps)
-    image_path = os.path.join(ASSISTANTS_WORKING_FOLDER, image_filename)
+    image_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, image_filename)
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = image.shape
@@ -322,7 +349,7 @@ def rack_focus(image_filename, duration, start_blur, end_blur, output_filename, 
         return blurred_image
 
     clip = VideoClip(make_frame, duration=duration)
-    output_path = os.path.join(ASSISTANTS_WORKING_FOLDER, output_filename)
+    output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
     clip.write_videofile(output_path, fps=fps)
     return output_filename
 
@@ -348,7 +375,7 @@ def whip_pan_to(
     duration = int(duration)
     fps = int(fps)
 
-    image_path = os.path.join(ASSISTANTS_WORKING_FOLDER, image_filename)
+    image_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, image_filename)
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = image.shape
@@ -356,23 +383,6 @@ def whip_pan_to(
     start_center = convert_and_validate(start_center, image_dim)
     end_center = convert_and_validate(end_center, image_dim)
 
-    # def make_frame(t):
-    #     frame_num = int(t * fps)
-    #     if frame_num < fps * duration / 2:
-    #         x = int(
-    #             start_center[0]
-    #             + (end_center[0] - start_center[0]) * frame_num / (fps * duration / 2)
-    #         )
-    #         y = start_center[1]
-    #     else:
-    #         x = end_center[0]
-    #         y = int(
-    #             start_center[1]
-    #             + (end_center[1] - start_center[1])
-    #             * (frame_num - fps * duration / 2)
-    #             / (fps * duration / 2)
-    #         )
-    #     return zoom(image, 1, center=(x, y))
     def make_frame(t):
         frame_num = int(t * fps)
         y = start_center[1]
@@ -392,7 +402,7 @@ def whip_pan_to(
         return cv2.resize(frame, (width, height))
 
     clip = VideoClip(make_frame, duration=duration)
-    output_path = os.path.join(ASSISTANTS_WORKING_FOLDER, output_filename)
+    output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
     clip.write_videofile(output_path, fps=fps)
     return output_filename
 
@@ -414,14 +424,48 @@ def concatenate_clips(clip_filenames, output_filename, fps=30):
 
     fps = int(fps)
     clip_paths = [
-        os.path.join(ASSISTANTS_WORKING_FOLDER, clip_path)
+        os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, clip_path)
         for clip_path in clip_filenames
     ]
     clips = [VideoFileClip(clip_path) for clip_path in clip_paths]
     final_clip = concatenate_videoclips(clips)
-    output_path = os.path.join(ASSISTANTS_WORKING_FOLDER, output_filename)
+    output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
     final_clip.write_videofile(output_path, fps=fps)
     return f"{output_filename} created successfully."
+
+
+@agent_action
+def create_gif_from_clip(clip_filename, size=(512, 512), fps=15):
+    """
+    Creates a GIF from a video clip.
+
+    Parameters:
+    clip_filename (str): The filename of the input video clip.
+    size (tuple): The resolution to resize the clip to (width, height). Default is (512, 512).
+    fps (int): Frames per second for the GIF. Default is 15.
+
+    Returns:
+    The filename of the created GIF
+    """
+    if size is None:
+        return "You need to specify a size for the GIF."
+    if isinstance(size, str):
+        size = convert_to_tuple(size)
+    fps = int(fps)
+    # Load the video file
+    input_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, clip_filename)
+    clip = VideoFileClip(input_path)
+
+    # Resize the clip
+    resized_clip = clip.resize(size)
+
+    # Generate the output filename
+    output_filename = clip_filename.rsplit(".", 1)[0] + ".gif"
+    output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
+    # Write the GIF file
+    resized_clip.write_gif(output_path, fps=fps)
+
+    return f"GIF created: {output_filename}"
 
 
 # Example usage

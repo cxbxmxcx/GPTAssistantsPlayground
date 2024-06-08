@@ -1,7 +1,7 @@
 # This file contains the implementation of assistant actions related to PowerPoint presentations. It is still a work in progress.
 
 from playground.actions_manager import agent_action
-from playground.constants import ASSISTANTS_WORKING_FOLDER
+from playground.global_values import GlobalValues
 from pptx import Presentation
 from pptx.util import Inches
 import markdown
@@ -23,7 +23,7 @@ def create_new_powerpoint(filename):
         os.path.dirname(os.path.abspath(__file__)), "template.pptx"
     )
     prs = Presentation(template_path)
-    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, filename)
+    file_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, filename)
     prs.save(file_path)
     return f"Created new PowerPoint presentation: {filename}"
 
@@ -76,7 +76,7 @@ def add_slide_to_powerpoint(filename, slide_content):
     Returns:
     None
     """
-    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, filename)
+    file_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, filename)
     prs = Presentation(file_path)
     slide_type = slide_content.get("slide_type", "Title and Content")
 

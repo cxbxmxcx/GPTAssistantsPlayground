@@ -3,6 +3,11 @@ import time
 import gradio as gr
 
 from playground.assistants_api import api
+from playground.assistants_utils import (
+    get_actions_by_name,
+    get_tools,
+    get_tools_by_name,
+)
 
 
 def assistants_panel(actions_manager):
@@ -15,35 +20,6 @@ def assistants_panel(actions_manager):
         return assistant_options
 
     assistant_options = list_assistants()
-
-    def get_tools(tools):
-        tools_list = []
-        action_list = []
-        for tool in tools:
-            if tool.type == "file_search":
-                tools_list.append("File search")
-            if tool.type == "code_interpreter":
-                tools_list.append("Code interpreter")
-            if tool.type == "function":
-                action_list.append(tool.function.name)
-        return tools_list, action_list
-
-    def get_tools_by_name(tools):
-        tools_list = []
-        for tool in tools:
-            if tool == "File search":
-                tools_list.append({"type": "file_search"})
-            if tool == "Code interpreter":
-                tools_list.append({"type": "code_interpreter"})
-        return tools_list
-
-    def get_actions_by_name(actions):
-        action_list = []
-        for action in actions:
-            for available_action in available_actions:
-                if available_action["name"] == action:
-                    action_list.append(available_action["agent_action"])
-        return action_list
 
     def update_assistant(
         assistant_name,
@@ -58,7 +34,7 @@ def assistants_panel(actions_manager):
     ):
         if assistant_id is not None and len(assistant_id) > 5:
             tools = get_tools_by_name(assistant_tools)
-            actions = get_actions_by_name(assistant_actions)
+            actions = get_actions_by_name(assistant_actions, available_actions)
             api.update_assistant(
                 assistant_name,
                 assistant_id,

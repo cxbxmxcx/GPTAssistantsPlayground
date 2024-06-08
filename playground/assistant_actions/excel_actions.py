@@ -3,7 +3,7 @@ import io
 import os
 
 from playground.actions_manager import agent_action
-from playground.constants import ASSISTANTS_WORKING_FOLDER
+from playground.global_values import GlobalValues
 
 
 @agent_action
@@ -18,7 +18,7 @@ def excel_to_csv(filename, skiprows):
     Returns:
     str: The CSV-formatted text string.
     """
-    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, filename)
+    file_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, filename)
     # Read the Excel file and skip the specified rows
     df = pd.read_excel(file_path, skiprows=skiprows)
 
@@ -57,7 +57,7 @@ def csv_to_excel(csv_content, start_row, filename):
     df = pd.read_csv(buffer)
 
     # Save the DataFrame to an Excel file
-    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, filename)
+    file_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, filename)
     df.to_excel(file_path, index=False, startrow=start_row)
 
     # Close the buffer

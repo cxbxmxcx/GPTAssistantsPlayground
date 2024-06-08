@@ -9,11 +9,11 @@ import gradio as gr
 from playground.actions_manager import ActionsManager
 from playground.assistants_api import api
 from playground.assistants_panel import assistants_panel
-from playground.assistants_utils import EventHandler
+from playground.assistants_utils import EventHandler, get_tools
 from playground.environment_manager import EnvironmentManager
 from playground.logging import Logger
 from playground.semantic_manager import SemanticManager
-from playground.constants import ASSISTANTS_WORKING_FOLDER
+from playground.global_values import GlobalValues
 
 thread = api.create_thread()  # create a new thread everytime this is run
 actions_manager = ActionsManager()
@@ -55,17 +55,35 @@ def print_like_dislike(x: gr.LikeData):
     print(x.index, x.value, x.liked)
 
 
-def ask_assistant(history, message):
+def ask_assistant(assistant_id, history, message):
+    assistant = api.retrieve_assistant(assistant_id)
+    if assistant is None:
+        history.append((None, "Assistant not found."))
+        return history, gr.MultimodalTextbox(value=None, interactive=False)
+
     if history is None:
         history = []
 
     attachments = []
     content = ""
     for file in message["files"]:
-        history.append(((file,), None))
-        # upload files to the thread
-        file = api.upload_file(file)
-        attachments += [{"file_id": file.id, "tools": [{"type": "code_interpreter"}]}]
+        tools, actions = get_tools(assistant.tools)
+        if "Code Interpreter" in tools:
+            # upload files to the thread
+            file = api.upload_file(file)
+            attachments += [
+                {"file_id": file.id, "tools": [{"type": "code_interpreter"}]}
+            ]
+        else:
+            with open(file, "r") as f:
+                file_content = f.read()
+            file = os.path.basename(file)
+            file_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, file)
+            with open(file_path, "w") as file:
+                file.write(file_content)
+                attachments = None
+            history.append((f"file {file}, saved to working folder.", None))
+
     if message["text"] is not None:
         history.append((message["text"], None))
         content = message["text"]
@@ -97,7 +115,7 @@ def get_file_path(file):
     if os.path.isabs(file):
         return file
 
-    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, file)
+    file_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, file)
     return file_path
 
 
@@ -248,7 +266,9 @@ with gr.Blocks(css=custom_css, theme=theme) as demo:
                 )
 
                 chat_msg = chat_input.submit(
-                    ask_assistant, [chatbot, chat_input], [chatbot, chat_input]
+                    ask_assistant,
+                    [assistant_id, chatbot, chat_input],
+                    [chatbot, chat_input],
                 )
                 bot_msg = chat_msg.then(
                     run,

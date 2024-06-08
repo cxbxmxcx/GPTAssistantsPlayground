@@ -1,7 +1,7 @@
 import os
 
 from playground.actions_manager import agent_action
-from playground.constants import ASSISTANTS_WORKING_FOLDER
+from playground.global_values import GlobalValues
 
 
 @agent_action
@@ -12,7 +12,7 @@ def save_file(filename, content):
     :param filename: The name of the file including extension.
     :param content: The content to save in the file.
     """
-    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, filename)
+    file_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, filename)
     with open(file_path, "w", encoding="utf-8") as file:
         file.write(content)
     return f"File '{filename}' saved successfully."
@@ -26,7 +26,7 @@ def load_file(filename):
     :param filename: The name of the file including extension.
     :return: The content of the file.
     """
-    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, filename)
+    file_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, filename)
     if not os.path.exists(file_path):
         print(f"File '{filename}' does not exist.")
         return None
@@ -44,7 +44,7 @@ def delete_file(filename):
 
     :param filename: The name of the file including extension.
     """
-    file_path = os.path.join(ASSISTANTS_WORKING_FOLDER, filename)
+    file_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, filename)
     if os.path.exists(file_path):
         os.remove(file_path)
         return f"File '{filename}' deleted successfully."
@@ -59,7 +59,7 @@ def create_folder(foldername):
 
     :param foldername: The name of the folder to create.
     """
-    folder_path = os.path.join(ASSISTANTS_WORKING_FOLDER, foldername)
+    folder_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, foldername)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
         return f"Folder '{foldername}' created successfully."
@@ -74,8 +74,19 @@ def list_files():
 
     :return: A list of file names.
     """
-    files = os.listdir(ASSISTANTS_WORKING_FOLDER)
+    files = os.listdir(GlobalValues.ASSISTANTS_WORKING_FOLDER)
     return files
+
+
+@agent_action
+def set_working_folder(foldername):
+    """
+    Set the working folder for file operations.
+
+    :param foldername: The name of the folder to set as the working folder.
+    """
+    GlobalValues.set_value("ASSISTANTS_WORKING_FOLDER", foldername)
+    return f"Working folder set to '{foldername}'."
 
 
 # # Example usage:

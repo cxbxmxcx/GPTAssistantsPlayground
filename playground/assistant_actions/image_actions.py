@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import base64
 
 from playground.actions_manager import agent_action
-from playground.constants import ASSISTANTS_WORKING_FOLDER
+from playground.global_values import GlobalValues
 
 load_dotenv()
 
@@ -38,7 +38,9 @@ def create_image(prompt, model="dall-e-3", size="1024x1024", quality="standard",
     image_response = requests.get(image_url)
     if image_response.status_code == 200:
         local_filename = f"{prompt.replace(' ', '_').replace(',','')[:50]}.png"
-        local_path = os.path.join(ASSISTANTS_WORKING_FOLDER, local_filename)
+        local_path = os.path.join(
+            GlobalValues.ASSISTANTS_WORKING_FOLDER, local_filename
+        )
         with open(local_path, "wb") as f:
             f.write(image_response.content)
         return local_filename
@@ -58,7 +60,7 @@ def encode_image(image_filename):
     Returns:
         str: The base64 encoded string of the image.
     """
-    local_path = os.path.join(ASSISTANTS_WORKING_FOLDER, image_filename)
+    local_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, image_filename)
     if not os.path.exists(local_path):
         return f"File not found: {image_filename}"
     with open(local_path, "rb") as image_file:
