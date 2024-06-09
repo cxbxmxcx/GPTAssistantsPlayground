@@ -6,3 +6,7 @@ python-dotenv
 pytest
 youtube-transcript-api
 py-trees
+python-pptx
+markdown
+moviepy
+opencv-python

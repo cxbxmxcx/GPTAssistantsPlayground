@@ -109,25 +109,52 @@ def zoom(image, zoom_factor, center=None):
     return resized
 
 
+# def zoom(image, factor, center):
+#     height, width, _ = image.shape
+#     if center is None:
+#         center = (width // 2, height // 2)
+
+#     x, y = center
+#     new_width = int(width / factor)
+#     new_height = int(height / factor)
+#     left = max(0, x - new_width // 2)
+#     right = min(width, x + new_width // 2)
+#     top = max(0, y - new_height // 2)
+#     bottom = min(height, y + new_height // 2)
+#     cropped_image = image[top:bottom, left:right]
+#     resized_image = cv2.resize(cropped_image, (width, height), interpolation=cv2.INTER_LINEAR)
+#     return resized_image
+
+
 @agent_action
-def zoom_at(
-    image_filename, duration, zoom_factor, output_filename, center=None, fps=30
+def zoom_to(
+    image_filename,
+    output_filename,
+    duration,
+    zoom_factor_from,
+    zoom_factor_to,
+    zoom_start_position,
+    zoom_end_position,
+    fps=30,
 ):
     """
     Creates a zoom-in video clip from an image.
 
     Args:
         image_filename (str): Path to the input image.
-        duration (int): Duration of the video in seconds.
-        zoom_factor (float): Maximum zoom factor.
         output_filename (str): Path to save the output video.
-        center (tuple, optional): Center point for zooming. Defaults to image center, is in pixels (512, 512) or as a ratio (0.5, 0.5).
+        duration (int): Duration of the video in seconds.
+        zoom_factor_from (float): Starting zoom factor.
+        zoom_factor_to (float): Ending zoom factor.
+        zoom_start_position (tuple): Starting center point for zooming.
+        zoom_end_position (tuple): Ending center point for zooming.
         fps (int): Frames per second. Defaults to 30.
 
     Returns:
         str: Path to the saved video clip.
     """
-    zoom_factor = float(zoom_factor)
+    zoom_factor_from = float(zoom_factor_from)
+    zoom_factor_to = float(zoom_factor_to)
     duration = int(duration)
     fps = int(fps)
     image_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, image_filename)
@@ -135,12 +162,23 @@ def zoom_at(
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = image.shape
     image_dim = (width, height)
-    if center:
-        center = convert_and_validate(center, image_dim)
+    if zoom_start_position:
+        zoom_start_position = convert_and_validate(zoom_start_position, image_dim)
+    if zoom_end_position:
+        zoom_end_position = convert_and_validate(zoom_end_position, image_dim)
 
     def make_frame(t):
         frame_num = int(t * fps)
-        factor = 1 + (zoom_factor - 1) * frame_num / (fps * duration)
+        factor = zoom_factor_from + (zoom_factor_to - zoom_factor_from) * frame_num / (
+            fps * duration
+        )
+        center_x = zoom_start_position[0] + (
+            zoom_end_position[0] - zoom_start_position[0]
+        ) * frame_num / (fps * duration)
+        center_y = zoom_start_position[1] + (
+            zoom_end_position[1] - zoom_start_position[1]
+        ) * frame_num / (fps * duration)
+        center = (int(center_x), int(center_y))
         return zoom(image, factor, center)
 
     clip = VideoClip(make_frame, duration=duration)
@@ -220,43 +258,6 @@ def pan_to(image_filename, duration, start_center, end_center, output_filename, 
         # Extract the portion of the image
         frame = image[top:bottom, left:right]
         return cv2.resize(frame, (width, height))
-
-    clip = VideoClip(make_frame, duration=duration)
-    output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
-    clip.write_videofile(output_path, fps=fps)
-    return output_filename
-
-
-@agent_action
-def zoom_from(
-    image_filename, duration, zoom_factor, output_filename, center=None, fps=30
-):
-    """
-    Creates a zoom-out video clip from an image.
-
-    Args:
-        image_filename (str): Path to the input image.
-        duration (int): Duration of the video in seconds.
-        zoom_factor (float): Initial zoom factor.
-        output_filename (str): Path to save the output video.
-        center (tuple, optional): Center point for zooming. Defaults to image center, is in pixels (512, 512) or as a ratio (0.5, 0.5).
-        fps (int): Frames per second. Defaults to 30.
-
-    Returns:
-        str: Path to the saved video clip.
-    """
-    duration = int(duration)
-    zoom_factor = float(zoom_factor)
-    fps = int(fps)
-    image_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, image_filename)
-    image = cv2.imread(image_path)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    height, width, _ = image.shape
-
-    def make_frame(t):
-        frame_num = int(t * fps)
-        factor = zoom_factor - (zoom_factor - 1) * frame_num / (fps * duration)
-        return zoom(image, factor, center)
 
     clip = VideoClip(make_frame, duration=duration)
     output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
