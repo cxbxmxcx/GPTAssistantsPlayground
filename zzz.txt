@@ -1,5 +1,0 @@
-1. Confirm today is not a holiday
-2. search videos on YouTube for the phrase GPT Agents, then for each video download the transcript and summarize it and then save all summarizations to a file called transcripts.txt
-3. load the file called transcripts.txt, analyze the contents and then save the results to a new file called trends.txt
-4. load the file called trends.txt and analyze the document for the top 5 keywords and phrases, analyze the phrases using Google Trends and create a plot of the trends over time. 
-
