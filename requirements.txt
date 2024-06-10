@@ -10,3 +10,4 @@ python-pptx
 markdown
 moviepy
 opencv-python
+scipy

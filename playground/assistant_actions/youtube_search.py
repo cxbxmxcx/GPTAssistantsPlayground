@@ -8,16 +8,35 @@ from playground.actions_manager import agent_action
 
 
 class YoutubeSearch:
-    def __init__(self, search_terms: str, max_results=None):
+    def __init__(self, search_terms: str, max_results=None, publish_time="today"):
         self.search_terms = search_terms
         self.max_results = int(max_results)
+        self.filter = self._get_filter(publish_time)
         self.videos = self._search()
+
+        # Upload Date:
+        # EgQIAhAB: Today
+        # EgQIAxAB: This week
+        # EgQIBBAB: This month
+        # EgQIBRAB: This year
+
+    def _get_filter(self, publish_time):
+        if publish_time == "today":
+            return "EgQIAhAB"
+        elif publish_time == "this week":
+            return "EgQIAxAB"
+        elif publish_time == "this month":
+            return "EgQIBBAB"
+        elif publish_time == "this year":
+            return "EgQIBRAB"
+        else:
+            return "EgQIAhAB"
 
     def _search(self):
         encoded_search = urllib.parse.quote_plus(self.search_terms)
         BASE_URL = "https://youtube.com"
         # This filter shows only videos uploaded in the last hour, sorted by relevance
-        url = f"{BASE_URL}/results?search_query={encoded_search}&sp=EgQIARAB"
+        url = f"{BASE_URL}/results?search_query={encoded_search}&sp={self.filter}"
         response = requests.get(url).text
         while "ytInitialData" not in response:
             response = requests.get(url).text
@@ -97,9 +116,32 @@ class YoutubeSearch:
 
 
 @agent_action
-def search_youtube_videos(query: str, max_results=10):
-    """Searches for videos on YouTube based on the query string and returns the video titles and IDs."""
-    results = YoutubeSearch(query, max_results=max_results)
+def search_youtube_videos(query: str, max_results=10, publish_time="this year"):
+    """
+    Search for YouTube videos based on a query and filter by publish time.
+
+    This function uses the YouTube Search API to find videos matching the specified query.
+    The results can be limited by the maximum number of results and filtered by the
+    publish time (e.g., today, this week, this month, this year).
+
+    Args:
+        query (str): The search query string.
+        max_results (int, optional): The maximum number of search results to return. Default is 10.
+        publish_time (str, optional): The time filter for the search results. Options include "today",
+                                      "this week", "this month", and "this year". Default is "today".
+
+    Returns:
+        list: A list of dictionaries containing video titles and their corresponding IDs.
+              Each dictionary has the following keys:
+              - "title" (str): The title of the video.
+              - "id" (str): The YouTube ID of the video.
+
+    Example:
+        >>> search_youtube_videos("create a YouTube channel", max_results=5, publish_time="this week")
+        [{'title': 'How to Create a YouTube Channel in 2024 (Step-by-Step Tutorial)', 'id': 'abcd1234'},
+         {'title': 'Creating a YouTube Channel: The Ultimate Guide', 'id': 'efgh5678'}]
+    """
+    results = YoutubeSearch(query, max_results=max_results, publish_time=publish_time)
     videos = results.videos
     return [{"title": video["title"], "id": video["id"]} for video in videos]
 

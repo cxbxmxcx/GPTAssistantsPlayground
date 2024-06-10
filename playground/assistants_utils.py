@@ -176,4 +176,4 @@ class EventHandler(AssistantEventHandler):
                 for text in stream.text_deltas:
                     self.output_queue.put(("text", text))
         except Exception as e:
-            self.output_queue.put(("text", str(e)))
+            self.output_queue.put(("text", f"Error in tool outputs: {str(e)}"))

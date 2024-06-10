@@ -1,9 +1,128 @@
 import cv2
 import re
-from moviepy.editor import VideoClip, concatenate_videoclips, VideoFileClip
+from moviepy.editor import (
+    VideoClip,
+    concatenate_videoclips,
+    VideoFileClip,
+    ImageClip,
+    TextClip,
+    CompositeVideoClip,
+)
 from playground.actions_manager import agent_action
 import os
 from playground.global_values import GlobalValues
+import numpy as np
+from moviepy.video.tools.segmenting import findObjects
+
+# Helper function for rotation matrix
+rotMatrix = lambda a: np.array([[np.cos(a), np.sin(a)], [-np.sin(a), np.cos(a)]])
+
+
+# Define movement functions for text effect
+def vortex(screenpos, i, nletters):
+    d = lambda t: 1.0 / (0.3 + t**8)  # damping
+    a = i * np.pi / nletters  # angle of the movement
+    v = rotMatrix(a).dot([-1, 0])
+    if i % 2:
+        v[1] = -v[1]
+    return lambda t: screenpos + 400 * d(t) * rotMatrix(0.5 * d(t) * a).dot(v)
+
+
+def cascade(screenpos, i, nletters):
+    v = np.array([0, -1])
+    d = lambda t: 1 if t < 0 else abs(np.sinc(t) / (1 + t**4))
+    return lambda t: screenpos + v * 400 * d(t - 0.15 * i)
+
+
+def arrive(screenpos, i, nletters):
+    v = np.array([-1, 0])
+    d = lambda t: max(0, 3 - 3 * t)
+    return lambda t: screenpos - 400 * v * d(t - 0.2 * i)
+
+
+def vortexout(screenpos, i, nletters):
+    d = lambda t: max(0, t)  # damping
+    a = i * np.pi / nletters  # angle of the movement
+    v = rotMatrix(a).dot([-1, 0])
+    if i % 2:
+        v[1] = -v[1]
+    return lambda t: screenpos + 400 * d(t - 0.1 * i) * rotMatrix(-0.2 * d(t) * a).dot(
+        v
+    )
+
+
+@agent_action
+def add_text_effect_to_image(
+    image_filename, output_filename, text, text_position="center", text_effect="vortex"
+):
+    """
+    Adds a text effect to an image and creates a video.
+
+    This function takes an image and overlays a text effect onto it, creating a video
+    with a specified duration. The text effect includes animations such as vortex, cascade,
+    arrive, and vortexout. The position of the text can also be specified.
+
+    Parameters:
+    image_filename (str): The filename of the input image.
+    output_filename (str): The filename of the output video.
+    text (str): The text to be displayed with effects.
+    text_position (str): The position of the text in the video ('bottom', 'center', 'top').
+    text_effect (str): The text effect to apply ('vortexout', 'arrive', 'cascade', 'vortex').
+
+    Returns:
+    str: The filename of the output video.
+    """
+    # Load the image
+    image_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, image_filename)
+    image_clip = ImageClip(image_path)
+    screensize = image_clip.size
+
+    # Create the text clip
+    txt_clip = TextClip(text, color="white", font="Amiri-Bold", kerning=5, fontsize=100)
+    cvc = CompositeVideoClip([txt_clip.set_pos("center")], size=screensize)
+
+    # Locate and separate each letter
+    letters = findObjects(cvc)  # a list of ImageClips
+
+    # Function to move letters
+    def moveLetters(letters, funcpos):
+        return [
+            letter.set_pos(funcpos(letter.screenpos, i, len(letters)))
+            for i, letter in enumerate(letters)
+        ]
+
+    # Select the text effect function and set duration based on the effect
+    effect_function = {
+        "vortex": (vortex, 5),
+        "cascade": (cascade, 5),
+        "arrive": (arrive, 5),
+        "vortexout": (vortexout, 5),
+    }.get(text_effect, (vortex, 5))
+
+    effect_func, duration = effect_function
+
+    # Create a clip with the selected text effect
+    effect_clip = CompositeVideoClip(
+        moveLetters(letters, effect_func), size=screensize
+    ).set_duration(duration)
+
+    # Position the text
+    position_dict = {
+        "bottom": ("center", "bottom"),
+        "center": ("center", "center"),
+        "top": ("center", "top"),
+    }
+    text_position = position_dict.get(text_position, ("center", "center"))
+
+    # Overlay the text effect on the image
+    final_clip = CompositeVideoClip(
+        [image_clip.set_duration(duration), effect_clip.set_pos(text_position)]
+    )
+
+    # Write the result to a file
+    output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
+    final_clip.write_videofile(output_path, fps=25)
+    return output_filename
 
 
 def safe_eval(expr):
