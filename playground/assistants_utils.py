@@ -142,8 +142,10 @@ class EventHandler(AssistantEventHandler):
         for tool in data.required_action.submit_tool_outputs.tool_calls:
             if tool.function.name in self.action_manager.get_action_names():
                 action = self.action_manager.get_action(tool.function.name)
+                print(f"action: {tool.function.name} -> {action}")
                 if action:
                     args = json.loads(tool.function.arguments)
+                    print(f"action: {tool.function.name} -> {args}")
                     output = action["pointer"](**args)
 
                     if hasattr(output, "data"):
@@ -176,4 +178,11 @@ class EventHandler(AssistantEventHandler):
                 for text in stream.text_deltas:
                     self.output_queue.put(("text", text))
         except Exception as e:
-            self.output_queue.put(("text", f"Error in tool outputs: {str(e)}"))
+            msg = f"Run cancelled with error in tool outputs: {str(e)}"
+            self.output_queue.put(("text", msg))
+            client.beta.threads.runs.cancel(run_id=self.current_run.id)
+            client.beta.threads.messages.create(
+                thread_id=self.current_run.thread_id,
+                role="assistant",
+                content=msg,
+            )

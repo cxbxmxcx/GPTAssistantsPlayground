@@ -25,6 +25,9 @@ class AssistantsAPI:
             content=content,
             attachments=attachments,
         )
+        
+    def get_threads(self):
+        return self.client.beta.threads.
 
     def create_assistant(
         self,
