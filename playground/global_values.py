@@ -3,6 +3,7 @@ import os
 
 class GlobalValues:
     ASSISTANTS_WORKING_FOLDER = "assistants_working_folder"
+    CODING_ENVIRONMENT_FOLDER = "environments/env"
 
     @classmethod
     def set_value(cls, var_name, value):

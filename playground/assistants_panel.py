@@ -127,7 +127,7 @@ def assistants_panel(actions_manager):
                 gr.update(visible=True),
             )
 
-    action_choices = [action["name"] for action in available_actions]
+    action_choices = sorted([action["name"] for action in available_actions])
     assistant_selected = gr.Dropdown(
         label="Select Assistant",
         choices=assistant_options.keys(),

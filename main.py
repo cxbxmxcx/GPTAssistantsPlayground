@@ -14,6 +14,7 @@ from playground.environment_manager import EnvironmentManager
 from playground.logging import Logger
 from playground.semantic_manager import SemanticManager
 from playground.global_values import GlobalValues
+import argparse
 
 thread = api.create_thread()  # create a new thread everytime this is run
 actions_manager = ActionsManager()
@@ -119,7 +120,7 @@ def get_file_path(file):
     return file_path
 
 
-def run(history, assistant_id):
+def run(history, assistant_id, artifacts):
     assistant = api.retrieve_assistant(assistant_id)
     output_queue = queue.Queue()
     eh = EventHandler(output_queue)
@@ -127,7 +128,11 @@ def run(history, assistant_id):
     if assistant is None:
         msg = "Assistant not found."
         history.append((None, msg))
-        yield history
+        yield (
+            history,
+            artifacts,
+            gr.update(visible=artifacts),
+        )
         return
 
     def stream_worker(assistant_id, thread_id, event_handler):
@@ -151,7 +156,6 @@ def run(history, assistant_id):
             item_type, item_value = output_queue.get(timeout=0.1)
             if item_type == "text":
                 history[-1][1] += item_value
-                # history[-1][1] = wrap_latex_with_markdown(history[-1][1])
             yield history
 
         except queue.Empty:
@@ -175,95 +179,107 @@ def run(history, assistant_id):
     return None
 
 
-# Custom CSS
-custom_css = """
-:root {
-    --adjustment-ratio: 150px; /* Height to subtract from the viewport for chatbot */
-}
+def main_interface():
+    parser = argparse.ArgumentParser(description="GPT Assistants Playground")
+    parser.add_argument("--port", type=int, default=7860, help="Port to run the app on")
+    parser.add_argument("--share", action="store_true", help="Create a public link")
+    parser.add_argument(
+        "--in-browser", action="store_true", help="Open in browser", default=True
+    )
+    parser.add_argument("--show-error", action="store_true", help="Show error messages")
+    parser.add_argument("--debug", action="store_true", help="Debug mode")
 
-body, html {
-    height: 100%;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-}
+    args = parser.parse_args()
 
-.gradio-container {
-    max-width: 100% !important; 
-    width: 100%;
-}
+    # Custom CSS
+    custom_css = """
+    :root {
+        --adjustment-ratio: 150px; /* Height to subtract from the viewport for chatbot */
+    }
 
-#chatbot {
-    height: calc(100vh - var(--adjustment-ratio)) !important; /* Uses adjustment ratio */
-    overflow-y: auto !important;
-}
+    body, html {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
 
-#instructions textarea {
-    min-height: calc(100vh - (var(--adjustment-ratio) + 750px)); /* Additional subtraction to account for other elements */
-    max-height: 1000px;
-    resize: vertical;
-    overflow-y: auto;
-}
-#assistant_logs textarea {
-    height: calc(100vh - (var(--adjustment-ratio) - 25px)); /* Initial height calculation */
-    min-height: 150px; /* Set a reasonable min-height */
-    max-height: 1000px; /* Max height of 1000px */
-    resize: vertical; /* Allow vertical resizing only */
-    overflow-y: auto; /* Enable vertical scrollbar when content exceeds max-height */
-    box-sizing: border-box; /* Ensure padding and border are included in the height calculation */
-}
+    .gradio-container {
+        max-width: 100% !important; 
+        width: 100%;
+    }
 
-#actionsnew { 
-    color: #000000; 
- }
+    #chatbot {
+        height: calc(100vh - var(--adjustment-ratio)) !important; /* Uses adjustment ratio */
+        overflow-y: auto !important;
+    }
 
-#actions { 
-    color: #000000; 
- }
- 
-video {
-    width: 300px;  /* initial width */
-    height: 200px; /* initial height */
-    transition: width 0.5s ease, height 0.5s ease;
-    cursor: pointer;
-}
-video:hover {
-    width: auto;
-    height: auto;
-    max-width: 100%; /* ensures it doesn’t exceed the container's width */
-}
-"""
+    #instructions textarea {
+        min-height: calc(100vh - (var(--adjustment-ratio) + 750px)); /* Additional subtraction to account for other elements */
+        max-height: 1000px;
+        resize: vertical;
+        overflow-y: auto;
+    }
+    #assistant_logs textarea {
+        height: calc(100vh - (var(--adjustment-ratio) - 25px)); /* Initial height calculation */
+        min-height: 150px; /* Set a reasonable min-height */
+        max-height: 1000px; /* Max height of 1000px */
+        resize: vertical; /* Allow vertical resizing only */
+        overflow-y: auto; /* Enable vertical scrollbar when content exceeds max-height */
+        box-sizing: border-box; /* Ensure padding and border are included in the height calculation */
+    }
 
-# theme = gr.themes.Default()
+    #actionsnew { 
+        color: #000000; 
+    }
 
-# theme = gr.themes.Glass()
-# theme = gr.themes.Monochrome()
-# theme = gr.themes.Soft()
-theme = "gstaff/sketch"
+    #actions { 
+        color: #000000; 
+    }
+    
+    video {
+        width: 300px;  /* initial width */
+        height: 200px; /* initial height */
+        transition: width 0.5s ease, height 0.5s ease;
+        cursor: pointer;
+    }
+    video:hover {
+        width: auto;
+        height: auto;
+        max-width: 100%; /* ensures it doesn’t exceed the container's width */
+    }
+    """
 
-with gr.Blocks(css=custom_css, theme=theme) as demo:
-    with gr.Tab(label="Playground"):
-        with gr.Row():
-            with gr.Column(scale=4):
-                assistant_id = assistants_panel(actions_manager)
+    # theme = gr.themes.Default()
 
-            with gr.Column(scale=8):
-                chatbot = gr.Chatbot(
-                    [],
-                    elem_id="chatbot",
-                    bubble_full_width=True,
-                    container=True,
-                    avatar_images=["avatar1.png", "avatar2.png"],
-                    layout="panel",
-                )
+    # theme = gr.themes.Glass()
+    # theme = gr.themes.Monochrome()
+    # theme = gr.themes.Soft()
+    theme = "gstaff/sketch"
 
-                chat_input = gr.MultimodalTextbox(
-                    interactive=True,
-                    file_types=["image"],
-                    placeholder="Enter message or upload file...",
-                    show_label=False,
-                    elem_id="chat_input",
-                )
+    with gr.Blocks(css=custom_css, theme=theme) as demo:
+        with gr.Tab(label="Playground"):
+            with gr.Row():
+                with gr.Column(scale=4):
+                    assistant_id = assistants_panel(actions_manager)
+
+                with gr.Column(scale=8):
+                    chatbot = gr.Chatbot(
+                        [],
+                        elem_id="chatbot",
+                        bubble_full_width=True,
+                        container=True,
+                        avatar_images=["avatar1.png", "avatar2.png"],
+                        layout="panel",
+                    )
+
+                    chat_input = gr.MultimodalTextbox(
+                        interactive=True,
+                        file_types=["image"],
+                        placeholder="Enter message or upload file...",
+                        show_label=False,
+                        elem_id="chat_input",
+                    )
 
                 chat_msg = chat_input.submit(
                     ask_assistant,
@@ -277,24 +293,35 @@ with gr.Blocks(css=custom_css, theme=theme) as demo:
                     api_name="assistant_response",
                 )
                 bot_msg.then(
-                    lambda: gr.MultimodalTextbox(interactive=True), None, [chat_input]
+                    lambda: gr.MultimodalTextbox(interactive=True),
+                    None,
+                    [chat_input],
                 )
 
                 chatbot.like(print_like_dislike, None, None)
 
-    with gr.Tab(label="Logs"):
-        with gr.Column(scale=4):
-            # Add logs
-            logs = gr.Code(
-                label="", language="python", interactive=False, container=True, lines=45
-            )
-            demo.load(logger.read_logs, None, logs, every=1)
-
-
-demo.queue()
+        with gr.Tab(label="Logs"):
+            with gr.Column(scale=4):
+                # Add logs
+                logs = gr.Code(
+                    label="",
+                    language="python",
+                    interactive=False,
+                    container=True,
+                    lines=45,
+                )
+                demo.load(logger.read_logs, None, logs, every=1)
+    demo.queue()
+    # demo.launch(share=True, inbrowser=True)
+    demo.launch(
+        server_port=args.port,
+        share=args.share,
+        inbrowser=args.in_browser,
+        show_error=args.show_error,
+        debug=args.debug,
+    )
 
 
 if __name__ == "__main__":
-    demo.launch()
+    main_interface()
     # use the following to launch in browser with a shareable link
-    # demo.launch(share=True, inbrowser=True)

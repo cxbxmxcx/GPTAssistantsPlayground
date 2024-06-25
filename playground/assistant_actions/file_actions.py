@@ -19,6 +19,20 @@ def save_file(filename, content):
 
 
 @agent_action
+def save_code_file(filename, code):
+    """
+    Save code to a file.
+
+    :param filename: The name of the file including extension.
+    :param code: The code to save in the file.
+    """
+    file_path = os.path.join(GlobalValues.CODING_ENVIRONMENT_FOLDER, filename)
+    with open(file_path, "w", encoding="utf-8") as file:
+        file.write(code)
+    return f"File '{filename}' saved successfully."
+
+
+@agent_action
 def load_file(filename):
     """
     Load content from a file.
@@ -27,6 +41,25 @@ def load_file(filename):
     :return: The content of the file.
     """
     file_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, filename)
+    if not os.path.exists(file_path):
+        print(f"File '{filename}' does not exist.")
+        return None
+
+    with open(file_path, "r", encoding="utf-8") as file:
+        content = file.read()
+    print(f"File '{filename}' loaded successfully.")
+    return content
+
+
+@agent_action
+def load_code_file(filename):
+    """
+    Load code from a file.
+
+    :param filename: The name of the file including extension.
+    :return: The code from the file.
+    """
+    file_path = os.path.join(GlobalValues.CODING_ENVIRONMENT_FOLDER, filename)
     if not os.path.exists(file_path):
         print(f"File '{filename}' does not exist.")
         return None
@@ -53,6 +86,21 @@ def delete_file(filename):
 
 
 @agent_action
+def delete_code_file(filename):
+    """
+    Delete a code file.
+
+    :param filename: The name of the file including extension.
+    """
+    file_path = os.path.join(GlobalValues.CODING_ENVIRONMENT_FOLDER, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return f"File '{filename}' deleted successfully."
+    else:
+        return f"File '{filename}' does not exist."
+
+
+@agent_action
 def create_folder(foldername):
     """
     Create a folder.
@@ -60,6 +108,21 @@ def create_folder(foldername):
     :param foldername: The name of the folder to create.
     """
     folder_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, foldername)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+        return f"Folder '{foldername}' created successfully."
+    else:
+        return f"Folder '{foldername}' already exists."
+
+
+@agent_action
+def create_code_folder(foldername):
+    """
+    Create a folder in the coding environment folder.
+
+    :param foldername: The name of the folder to create.
+    """
+    folder_path = os.path.join(GlobalValues.CODING_ENVIRONMENT_FOLDER, foldername)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
         return f"Folder '{foldername}' created successfully."
@@ -79,6 +142,17 @@ def list_files():
 
 
 @agent_action
+def list_code_files():
+    """
+    List all code files in the coding environment folder.
+
+    :return: A list of file names.
+    """
+    files = os.listdir(GlobalValues.CODING_ENVIRONMENT_FOLDER)
+    return files
+
+
+@agent_action
 def set_working_folder(foldername):
     """
     Set the working folder for file operations.
@@ -87,6 +161,17 @@ def set_working_folder(foldername):
     """
     GlobalValues.set_value("ASSISTANTS_WORKING_FOLDER", foldername)
     return f"Working folder set to '{foldername}'."
+
+
+@agent_action
+def set_working_code_folder(foldername):
+    """
+    Set the working folder for the code environment operations.
+
+    :param foldername: The name of the folder to set as the coding environment folder.
+    """
+    GlobalValues.set_value("CODING_ENVIRONMENT_FOLDER", foldername)
+    return f"Coding environment folder set to '{foldername}'."
 
 
 # # Example usage:

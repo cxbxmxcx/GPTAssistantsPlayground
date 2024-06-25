@@ -132,6 +132,7 @@ venv.bak/
 assistant_outputs/
 assistants_working_folder/
 
+artifacts_folder/
 logs.txt
 
 # Spyder project settings
