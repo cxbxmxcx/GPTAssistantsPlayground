@@ -257,7 +257,9 @@ def main_interface():
     # theme = gr.themes.Soft()
     theme = "gstaff/sketch"
 
-    with gr.Blocks(css=custom_css, theme=theme) as demo:
+    with gr.Blocks(
+        css=custom_css, theme=theme, title="GPT Assistants Playground"
+    ) as demo:
         with gr.Tab(label="Playground"):
             with gr.Row():
                 with gr.Column(scale=4):
@@ -314,7 +316,6 @@ def main_interface():
     demo.queue()
     # demo.launch(share=True, inbrowser=True)
     demo.launch(
-        server_port=args.port,
         share=args.share,
         inbrowser=args.in_browser,
         show_error=args.show_error,

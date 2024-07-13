@@ -180,7 +180,7 @@ class EventHandler(AssistantEventHandler):
         except Exception as e:
             msg = f"Run cancelled with error in tool outputs: {str(e)}"
             self.output_queue.put(("text", msg))
-            client.beta.threads.runs.cancel(run_id=self.current_run.id)
+             client.beta.threads.runs.cancel(run_id=self.current_run.id)
             client.beta.threads.messages.create(
                 thread_id=self.current_run.thread_id,
                 role="assistant",
