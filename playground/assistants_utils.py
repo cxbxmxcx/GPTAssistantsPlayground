@@ -136,7 +136,11 @@ class EventHandler(AssistantEventHandler):
             run_id = event.data.id  # Retrieve the run ID from the event data
             self.handle_requires_action(event.data, run_id)
 
-    def handle_requires_action(self, data, run_id):
+    def handle_requires_action(
+        self,
+        data,
+        run_id,
+    ):
         tool_outputs = []
 
         for tool in data.required_action.submit_tool_outputs.tool_calls:
@@ -144,24 +148,28 @@ class EventHandler(AssistantEventHandler):
                 action = self.action_manager.get_action(tool.function.name)
                 print(f"action: {tool.function.name} -> {action}")
                 if action:
-                    args = json.loads(tool.function.arguments)
-                    print(f"action: {tool.function.name} -> {args}")
-                    output = action["pointer"](**args)
+                    try:
+                        args = json.loads(tool.function.arguments)
+                        print(f"action: {tool.function.name} -> {args}")
+                        output = action["pointer"](**args)
 
-                    if hasattr(output, "data"):
-                        for el in output.data:
-                            if hasattr(el, "content"):
-                                for c in el.content:
-                                    if hasattr(c, "image_file"):
-                                        self.on_image_file_done(c.image_file)
+                        if hasattr(output, "data"):
+                            for el in output.data:
+                                if hasattr(el, "content"):
+                                    for c in el.content:
+                                        if hasattr(c, "image_file"):
+                                            self.on_image_file_done(c.image_file)
 
-                    tool_outputs.append(
-                        {"tool_call_id": tool.id, "output": str(output)}
-                    )
-                    print(
-                        f"action: {tool.function.name}(args={tool.function.arguments}) -> {str(output)}"
-                    )
-                    self.internal_context += str(output)
+                        tool_outputs.append(
+                            {"tool_call_id": tool.id, "output": str(output)}
+                        )
+                        print(
+                            f"action: {tool.function.name}(args={tool.function.arguments}) -> {str(output)}"
+                        )
+                        self.internal_context += str(output)
+                    except Exception as e:
+                        print(f"Error in action: {tool.function.name} -> {str(e)}")
+                        tool_outputs.append({"tool_call_id": tool.id, "output": str(e)})
 
         # Submit all tool_outputs at the same time
         self.submit_tool_outputs(tool_outputs, run_id)
@@ -180,7 +188,9 @@ class EventHandler(AssistantEventHandler):
         except Exception as e:
             msg = f"Run cancelled with error in tool outputs: {str(e)}"
             self.output_queue.put(("text", msg))
-             client.beta.threads.runs.cancel(run_id=self.current_run.id)
+            client.beta.threads.runs.cancel(
+                run_id=self.current_run.id, thread_id=self.current_run.thread_id
+            )
             client.beta.threads.messages.create(
                 thread_id=self.current_run.thread_id,
                 role="assistant",

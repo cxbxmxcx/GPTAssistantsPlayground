@@ -1,3 +1,4 @@
+import time
 from docx import Document
 from docx.shared import Inches
 
@@ -96,6 +97,20 @@ def extract_all_from_doc(doc_filename, output_folder):
     return full_document_text, image_paths, code_paths
 
 
+# @agent_action
+# def create_word_doc(doc_filename):
+#     """
+#     Create a new Word document.
+
+#     Parameters:
+#     doc_filename (str): The path to the Word document.
+#     """
+#     doc = Document()
+#     doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
+#     doc.save(doc_path)
+#     return "Document created successfully."
+
+
 @agent_action
 def create_word_doc(doc_filename):
     """
@@ -107,6 +122,10 @@ def create_word_doc(doc_filename):
     doc = Document()
     doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
     doc.save(doc_path)
+
+    # Update file creation and modification times
+    current_time = time.time()
+    os.utime(doc_path, (current_time, current_time))
     return "Document created successfully."
 
 

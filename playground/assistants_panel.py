@@ -162,23 +162,29 @@ def assistants_panel(actions_manager):
             assistant_actions_new = gr.CheckboxGroup(
                 label="Actions", choices=action_choices, interactive=True
             )
-        assistant_resformat_new = gr.Radio(
-            label="Response Format",
-            choices=["JSON object", "Plain text"],
-            value="JSON object",
-            interactive=True,
-        )
-        assistant_temperature_new = gr.Slider(
-            label="Temperature",
-            minimum=0,
-            maximum=1,
-            step=0.01,
-            value=1,
-            interactive=True,
-        )
-        assistant_top_p_new = gr.Slider(
-            label="Top P", minimum=0, maximum=1, step=0.01, value=1, interactive=True
-        )
+        with gr.Accordion("Model settings", open=False, elem_id="modelsettingsnew"):
+            assistant_resformat_new = gr.Radio(
+                label="Response Format",
+                choices=["JSON object", "Plain text"],
+                value="JSON object",
+                interactive=True,
+            )
+            assistant_temperature_new = gr.Slider(
+                label="Temperature",
+                minimum=0,
+                maximum=1,
+                step=0.01,
+                value=1,
+                interactive=True,
+            )
+            assistant_top_p_new = gr.Slider(
+                label="Top P",
+                minimum=0,
+                maximum=1,
+                step=0.01,
+                value=1,
+                interactive=True,
+            )
         add_button = gr.Button("Add Assistant", interactive=True, visible=True)
 
     with gr.Column(visible=True) as existing_assistant_form:
@@ -203,17 +209,18 @@ def assistants_panel(actions_manager):
             assistant_actions = gr.CheckboxGroup(
                 label="Actions", choices=action_choices, interactive=True
             )
-        assistant_resformat = gr.Radio(
-            label="Response Format",
-            choices=["JSON object", "Plain text"],
-            value="JSON object",
-        )
-        assistant_temperature = gr.Slider(
-            label="Temperature", minimum=0, maximum=1, step=0.01, value=1
-        )
-        assistant_top_p = gr.Slider(
-            label="Top P", minimum=0, maximum=1, step=0.01, value=1
-        )
+        with gr.Accordion("Model settings", open=False, elem_id="modelsettings"):
+            assistant_resformat = gr.Radio(
+                label="Response Format",
+                choices=["JSON object", "Plain text"],
+                value="JSON object",
+            )
+            assistant_temperature = gr.Slider(
+                label="Temperature", minimum=0, maximum=1, step=0.01, value=1
+            )
+            assistant_top_p = gr.Slider(
+                label="Top P", minimum=0, maximum=1, step=0.01, value=1
+            )
         delete_button = gr.Button("🗑️")
 
     assistant_selected.change(

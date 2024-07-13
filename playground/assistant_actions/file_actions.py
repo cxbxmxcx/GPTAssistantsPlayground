@@ -5,6 +5,39 @@ from playground.global_values import GlobalValues
 
 
 @agent_action
+def copy_file(source, destination):
+    """
+    Copy a file from the source to the destination.
+
+    :param source: The source file path.
+    :param destination: The destination file path.
+    """
+    if not os.path.exists(source):
+        return f"Source file '{source}' does not exist."
+    if os.path.exists(destination):
+        return f"Destination file '{destination}' already exists."
+
+    with open(source, "rb") as source_file:
+        with open(destination, "wb") as destination_file:
+            destination_file.write(source_file.read())
+    return f"File '{source}' copied to '{destination}'."
+
+
+@agent_action
+def list_files(extension=None):
+    """
+    List all files in the working folder.
+
+    :param extension: The file extension to filter by.
+    :return: A list of file names.
+    """
+    files = os.listdir(GlobalValues.ASSISTANTS_WORKING_FOLDER)
+    if extension:
+        files = [file for file in files if file.endswith(extension)]
+    return files
+
+
+@agent_action
 def save_file(filename, content):
     """
     Save content to a file.
@@ -128,17 +161,6 @@ def create_code_folder(foldername):
         return f"Folder '{foldername}' created successfully."
     else:
         return f"Folder '{foldername}' already exists."
-
-
-@agent_action
-def list_files():
-    """
-    List all files in the working folder.
-
-    :return: A list of file names.
-    """
-    files = os.listdir(GlobalValues.ASSISTANTS_WORKING_FOLDER)
-    return files
 
 
 @agent_action

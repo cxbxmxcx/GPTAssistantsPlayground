@@ -2,6 +2,8 @@ import os
 import subprocess
 import sys
 from datetime import datetime
+import time
+import pyautogui
 
 
 class EnvironmentManager:
@@ -39,6 +41,10 @@ class EnvironmentManager:
         subprocess.check_call([pip_executable, "install", package])
         print(f"Installed package: {package}")
 
+    def capture_screenshot(self, filename):
+        screenshot = pyautogui.screenshot()
+        screenshot.save(filename)
+
     def run_code(self, code, filename=None):
         if not filename:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -53,17 +59,31 @@ class EnvironmentManager:
             if os.name == "nt"
             else os.path.join(self.env_path, "bin", "python")
         )
-        result = subprocess.run(
-            [python_executable, filepath], capture_output=True, text=True
+
+        # Start the subprocess
+        process = subprocess.Popen(
+            [python_executable, filepath],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
         )
 
-        # print(f"Output: {result.stdout}")
-        # print(f"Errors: {result.stderr}")
-        if (result.stderr is None or result.stderr == "") and (
-            result.stdout is None or result.stdout == ""
-        ):
+        # Allow some time for the Pygame window to open
+        time.sleep(2)
+
+        # Capture the initial screenshot
+        self.capture_screenshot("initial_screenshot.png")
+
+        # Wait for the process to complete
+        stdout, stderr = process.communicate()
+
+        # Capture the final screenshot
+        self.capture_screenshot("final_screenshot.png")
+
+        # Return the results
+        if (stderr is None or stderr == "") and (stdout is None or stdout == ""):
             return "The process appears to have run successfully.", ""
-        return result.stdout, result.stderr
+        return stdout, stderr
 
     def run_shell_command(self, command):
         activate_script = (

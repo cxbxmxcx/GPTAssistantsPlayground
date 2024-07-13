@@ -116,7 +116,7 @@ class YoutubeSearch:
 
 
 @agent_action
-def search_youtube_videos(query: str, max_results=10, publish_time="this year"):
+def search_youtube_videos(query: str, max_results=5, publish_time="this year"):
     """
     Search for YouTube videos based on a query and filter by publish time.
 
@@ -126,22 +126,14 @@ def search_youtube_videos(query: str, max_results=10, publish_time="this year"):
 
     Args:
         query (str): The search query string.
-        max_results (int, optional): The maximum number of search results to return. Default is 10.
+        max_results (int, optional): The maximum number of search results to return. Default is 5.
         publish_time (str, optional): The time filter for the search results. Options include "today",
                                       "this week", "this month", and "this year". Default is "today".
 
     Returns:
         list: A list of dictionaries containing video titles and their corresponding IDs.
-              Each dictionary has the following keys:
-              - "title" (str): The title of the video.
-              - "id" (str): The YouTube ID of the video.
-
-    Example:
-        >>> search_youtube_videos("create a YouTube channel", max_results=5, publish_time="this week")
-        [{'title': 'How to Create a YouTube Channel in 2024 (Step-by-Step Tutorial)', 'id': 'abcd1234'},
-         {'title': 'Creating a YouTube Channel: The Ultimate Guide', 'id': 'efgh5678'}]
     """
-    results = YoutubeSearch(query, max_results=max_results, publish_time=publish_time)
+    results = YoutubeSearch(query, max_results=3, publish_time=publish_time)
     videos = results.videos
     return [{"title": video["title"], "id": video["id"]} for video in videos]
 

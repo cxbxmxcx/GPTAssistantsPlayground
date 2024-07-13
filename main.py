@@ -10,6 +10,7 @@ from playground.actions_manager import ActionsManager
 from playground.assistants_api import api
 from playground.assistants_panel import assistants_panel
 from playground.assistants_utils import EventHandler, get_tools
+from playground.btree_runner_panel import btree_runner_panel
 from playground.environment_manager import EnvironmentManager
 from playground.logging import Logger
 from playground.semantic_manager import SemanticManager
@@ -215,7 +216,7 @@ def main_interface():
     }
 
     #instructions textarea {
-        min-height: calc(100vh - (var(--adjustment-ratio) + 750px)); /* Additional subtraction to account for other elements */
+        min-height: calc(100vh - (var(--adjustment-ratio) + 575px)); /* Additional subtraction to account for other elements */
         max-height: 1000px;
         resize: vertical;
         overflow-y: auto;
@@ -301,6 +302,10 @@ def main_interface():
                 )
 
                 chatbot.like(print_like_dislike, None, None)
+
+        with gr.Tab(label="Behavior Tree Runner"):
+            with gr.Column(scale=4):
+                btree_runner = btree_runner_panel()
 
         with gr.Tab(label="Logs"):
             with gr.Column(scale=4):

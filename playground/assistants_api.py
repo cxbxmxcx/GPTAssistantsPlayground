@@ -142,7 +142,9 @@ class AssistantsAPI:
                     for text in stream.text_deltas:
                         output_queue.put(("text", text))
             except Exception as e:
-                print(e)
+                error_msg = f"Run cancelled with error: {str(e)}"
+                print(error_msg)
+                output_queue.put(("text", error_msg))
 
         # Start the initial stream
         thread_id = thread.id
