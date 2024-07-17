@@ -133,7 +133,7 @@ def search_youtube_videos(query: str, max_results=5, publish_time="this year"):
     Returns:
         list: A list of dictionaries containing video titles and their corresponding IDs.
     """
-    results = YoutubeSearch(query, max_results=3, publish_time=publish_time)
+    results = YoutubeSearch(query, max_results=max_results, publish_time=publish_time)
     videos = results.videos
     return [{"title": video["title"], "id": video["id"]} for video in videos]
 

@@ -45,14 +45,61 @@ class EnvironmentManager:
         screenshot = pyautogui.screenshot()
         screenshot.save(filename)
 
+    def run_app_file(self, filename):
+        """
+        Execute the specified Python web application file in a virtual environment.
+
+        Args:
+            filename (str, optional): The name of the file containing the web application code.
+
+        Returns:
+            tuple: A tuple containing:
+                - initial_output (str): The initial output produced by the web application execution.
+                - initial_errors (str): Any errors encountered during the initial web application execution.
+        """
+        if filename is None:
+            raise ValueError("Filename must be provided")
+
+        filepath = os.path.join(self.env_path, filename)
+        python_executable = (
+            os.path.join(self.env_path, "Scripts", "python")
+            if os.name == "nt"
+            else os.path.join(self.env_path, "bin", "python")
+        )
+
+        try:
+            process = subprocess.Popen(
+                [python_executable, filepath],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+            # Allow the process to run for a few seconds to capture initial output
+            time.sleep(10)
+
+            # Check if process has terminated
+            return_code = process.poll()
+            if return_code is not None:
+                # Process terminated, capture output and errors
+                initial_output, initial_errors = process.communicate()
+            else:
+                return "Process appears to be running correctly", ""
+
+            return initial_output, initial_errors
+        except Exception as e:
+            return "", str(e)
+
     def run_code(self, code, filename=None):
         if not filename:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"code_{timestamp}.py"
         filepath = os.path.join(self.env_path, filename)
 
-        with open(filepath, "w") as f:
-            f.write(code)
+        if code is not None and code != "":
+            # Write the code to a file
+            with open(filepath, "w") as f:
+                f.write(code)
 
         python_executable = (
             os.path.join(self.env_path, "Scripts", "python")

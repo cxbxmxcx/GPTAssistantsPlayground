@@ -17,7 +17,7 @@ from playground.semantic_manager import SemanticManager
 from playground.global_values import GlobalValues
 import argparse
 
-thread = api.create_thread()  # create a new thread everytime this is run
+# thread = api.create_thread()  # create a new thread everytime this is run
 actions_manager = ActionsManager()
 semantic_manager = SemanticManager()
 
@@ -28,29 +28,16 @@ env_manager.install_requirements()
 logger = Logger("logs.txt")
 logger.reset_logs()
 
+current_thread = None
 
-def wrap_latex_with_markdown(text):
-    # system = """You are a LaTeX genius and equation genius!,
-    # Your job is to identify LaTeX and equations in the text.
-    # For each block of LaTeX or equation text you will wrap it with $ if the block is inline,
-    # or with $$ if the block is on its own line.
-    # Examples:
-    # inline x^2 + y^2 = z^2 with text -> inline $x^2 + y^2 = z^2$ with text
-    # x^2 + y^2 = z^2 -> $$x^2 + y^2 = z^2$$
-    # """
-    # user = text
-    # text = semantic_manager.get_semantic_response(system, user)
-    # return text
-    # Regular expression to find LaTeX enclosed in [] or ()
-    bracket_pattern = re.compile(r"\[(.*?)\]")
-    parenthesis_pattern = re.compile(r"\((.*?)\)")
 
-    # Replace LaTeX within brackets with Markdown inline math
-    text = bracket_pattern.sub(r"$$\1$$", text)
+def create_new_thread():
+    global current_thread
+    current_thread = api.create_thread()
+    return "New thread created."
 
-    # Replace LaTeX within parentheses with Markdown inline math
-    text = parenthesis_pattern.sub(r"$$\1$$", text)
-    return text
+
+create_new_thread()
 
 
 def print_like_dislike(x: gr.LikeData):
@@ -90,7 +77,9 @@ def ask_assistant(assistant_id, history, message):
         history.append((message["text"], None))
         content = message["text"]
     if content or attachments:  # only create a message if there is content
-        api.create_thread_message(thread.id, "user", content, attachments=attachments)
+        api.create_thread_message(
+            current_thread.id, "user", content, attachments=attachments
+        )
 
     return history, gr.MultimodalTextbox(value=None, interactive=False)
 
@@ -122,6 +111,15 @@ def get_file_path(file):
 
 
 def run(history, assistant_id, artifacts):
+    if current_thread is None:
+        history.append((None, "Please create a new thread first."))
+        yield (
+            history,
+            artifacts,
+            gr.update(visible=artifacts),
+        )
+        return
+
     assistant = api.retrieve_assistant(assistant_id)
     output_queue = queue.Queue()
     eh = EventHandler(output_queue)
@@ -146,7 +144,7 @@ def run(history, assistant_id, artifacts):
                 output_queue.put(("text", text))
 
     # Start the initial stream
-    thread_id = thread.id
+    thread_id = current_thread.id
     initial_thread = threading.Thread(
         target=stream_worker, args=(assistant.id, thread_id, eh)
     )
@@ -272,17 +270,24 @@ def main_interface():
                         elem_id="chatbot",
                         bubble_full_width=True,
                         container=True,
-                        avatar_images=["avatar1.png", "avatar2.png"],
+                        avatar_images=["avatar1.png", "avatar2_lite.png"],
                         layout="panel",
                     )
+                    with gr.Row():
+                        with gr.Column(scale=12):
+                            chat_input = gr.MultimodalTextbox(
+                                interactive=True,
+                                file_types=["image"],
+                                placeholder="Enter message or upload file...",
+                                show_label=False,
+                                elem_id="chat_input",
+                            )
+                        with gr.Column(scale=1):
+                            new_thread_button = gr.Button(
+                                "Create New Thread", size="lg"
+                            )
 
-                    chat_input = gr.MultimodalTextbox(
-                        interactive=True,
-                        file_types=["image"],
-                        placeholder="Enter message or upload file...",
-                        show_label=False,
-                        elem_id="chat_input",
-                    )
+                new_thread_button.click(create_new_thread, [], None)
 
                 chat_msg = chat_input.submit(
                     ask_assistant,
@@ -303,7 +308,7 @@ def main_interface():
 
                 chatbot.like(print_like_dislike, None, None)
 
-        with gr.Tab(label="Behavior Tree Runner"):
+        with gr.Tab(label="Agentic Behavior Tree Runner"):
             with gr.Column(scale=4):
                 btree_runner = btree_runner_panel()
 

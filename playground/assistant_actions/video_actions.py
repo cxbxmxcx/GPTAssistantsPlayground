@@ -13,6 +13,8 @@ import os
 from playground.global_values import GlobalValues
 import numpy as np
 from moviepy.video.tools.segmenting import findObjects
+from moviepy.video.fx.all import resize
+import imageio
 
 # Helper function for rotation matrix
 rotMatrix = lambda a: np.array([[np.cos(a), np.sin(a)], [-np.sin(a), np.cos(a)]])
@@ -554,8 +556,42 @@ def concatenate_clips(clip_filenames, output_filename, fps=30):
     return f"{output_filename} created successfully."
 
 
+# @agent_action
+# def create_gif_from_clip(clip_filename, size=(512, 512), fps=15):
+#     """
+#     Creates a GIF from a video clip.
+
+#     Parameters:
+#     clip_filename (str): The filename of the input video clip.
+#     size (tuple): The resolution to resize the clip to (width, height). Default is (512, 512).
+#     fps (int): Frames per second for the GIF. Default is 15.
+
+#     Returns:
+#     The filename of the created GIF
+#     """
+#     if size is None:
+#         return "You need to specify a size for the GIF."
+#     if isinstance(size, str):
+#         size = convert_to_tuple(size)
+#     fps = int(fps)
+#     # Load the video file
+#     input_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, clip_filename)
+#     clip = VideoFileClip(input_path)
+
+#     # Resize the clip
+#     resized_clip = clip.resize(size)
+
+#     # Generate the output filename
+#     output_filename = clip_filename.rsplit(".", 1)[0] + ".gif"
+#     output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
+#     # Write the GIF file
+#     resized_clip.write_gif(output_path, fps=fps)
+
+#     return f"GIF created: {output_filename}"
+
+
 @agent_action
-def create_gif_from_clip(clip_filename, size=(512, 512), fps=15):
+def create_gif_from_clip(clip_filename, size=(512, 512), fps=15, optimize=True):
     """
     Creates a GIF from a video clip.
 
@@ -563,6 +599,7 @@ def create_gif_from_clip(clip_filename, size=(512, 512), fps=15):
     clip_filename (str): The filename of the input video clip.
     size (tuple): The resolution to resize the clip to (width, height). Default is (512, 512).
     fps (int): Frames per second for the GIF. Default is 15.
+    optimize (bool): Whether to optimize the GIF for smaller file size. Default is True.
 
     Returns:
     The filename of the created GIF
@@ -572,18 +609,30 @@ def create_gif_from_clip(clip_filename, size=(512, 512), fps=15):
     if isinstance(size, str):
         size = convert_to_tuple(size)
     fps = int(fps)
+
     # Load the video file
     input_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, clip_filename)
     clip = VideoFileClip(input_path)
 
     # Resize the clip
-    resized_clip = clip.resize(size)
+    resized_clip = resize(clip, newsize=size)
 
     # Generate the output filename
     output_filename = clip_filename.rsplit(".", 1)[0] + ".gif"
     output_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, output_filename)
-    # Write the GIF file
-    resized_clip.write_gif(output_path, fps=fps)
+
+    # Write the GIF file with optimization
+    resized_clip.write_gif(output_path, fps=fps, program="ffmpeg", opt=optimize)
+
+    # Additional optimization using imageio
+    if optimize:
+        reader = imageio.get_reader(output_path)
+        writer = imageio.get_writer(
+            output_path, mode="I", fps=fps, palettesize=256, quantizer="nq", quality=10
+        )
+        for frame in reader:
+            writer.append_data(frame)
+        writer.close()
 
     return f"GIF created: {output_filename}"
 
