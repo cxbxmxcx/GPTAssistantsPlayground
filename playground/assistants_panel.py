@@ -148,7 +148,7 @@ def assistants_panel(actions_manager):
         )
         assistant_model_new = gr.Dropdown(
             label="Model",
-            choices=["gpt-3", "gpt-3.5", "gpt-4", "gpt-4o"],
+            choices=["gpt-4", "gpt-4o", "gpt-4o-mini"],
             value="gpt-4o",
             interactive=True,
         )
@@ -199,7 +199,7 @@ def assistants_panel(actions_manager):
         )
         assistant_model = gr.Dropdown(
             label="Model",
-            choices=["gpt-3", "gpt-3.5", "gpt-4", "gpt-4o"],
+            choices=["gpt-4", "gpt-4o", "gpt-4o-mini"],
             value="gpt-4o",
         )
         assistant_tools = gr.CheckboxGroup(

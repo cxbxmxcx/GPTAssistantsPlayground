@@ -1,0 +1,42 @@
+behavior_tree:
+  name: "Repository Blogger"
+  root:
+    type: "Selector"
+    memory: true
+    children:
+      - type: "Sequence"
+        name: "Search Selector"
+        memory: true
+        children:
+          - type: "Action"
+            name: "Search GitHub"
+            agent: "GitHub Researcher"
+            instructions: |
+              Research GitHub repositories on AI Agents.
+              Make sure to only select repositories that are relevant to AI Agents and use Python.
+              If you encounter any errors, please return just the word FAILURE.
+          - type: "Action"
+            name: "Write blog"
+            agent: "GitHub Blogger"
+            instructions: |
+              Load the file called top_github_repo.txt,
+              extract the GitHub repository name and url from the file.              
+              Use the readme file information to write a getting started blog post on the repository.
+              Be sure to demonstrate plenty of code examples and explanations of the code.
+              
+              As your last operation write the blog filename to a file called blog_filenames.txt.
+              If you encounter any errors, please return just the word FAILURE.          
+          - type: "Action"
+            name: "Cleanup"
+            agent: "File Manager"
+            instructions: |
+              Delete the top_github_repo.txt file.
+              Delete the blog_filenames.txt file.                          
+              If you encounter any errors, please return just the word FAILURE.
+      - type: "Action"
+        name: "Cleanup"
+        agent: "File Manager"
+        instructions: |
+          Delete the top_github_repo.txt file.
+          Delete the blog_filenames.txt file.  
+          If you encounter any errors, please return just the word FAILURE.

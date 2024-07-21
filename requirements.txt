@@ -12,3 +12,5 @@ markdown
 moviepy
 opencv-python
 scipy
+prefect
+googlemaps

@@ -142,7 +142,7 @@ search_cache = []
 
 
 @agent_action
-def search_new_youtube_videos(query: str, max_results=10):
+def search_new_youtube_videos(query: str, max_results=5):
     """Searches for new videos on YouTube based on the query string and returns the video titles and IDs."""
     global search_cache
     results = YoutubeSearch(query, max_results=max_results)

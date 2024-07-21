@@ -138,12 +138,15 @@ def append_paragraph_to_word_doc(doc_filename, paragraph_text):
     doc_filename (str): The path to the Word document.
     paragraph_text (str): The text to append as a paragraph.
     """
-    doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
-    doc = Document(doc_path)
-    doc.add_paragraph(paragraph_text)
-    doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
-    doc.save(doc_path)
-    return "Paragraph added successfully."
+    try:
+        doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
+        doc = Document(doc_path)
+        doc.add_paragraph(paragraph_text)
+        doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
+        doc.save(doc_path)
+        return "Paragraph added successfully."
+    except Exception as e:
+        return f"Error: {e}"
 
 
 @agent_action
@@ -156,13 +159,16 @@ def append_heading_to_word_doc(doc_filename, heading_text, level):
     heading_text (str): The text to append as a heading.
     level (int): The heading level (0-9).
     """
-    level = int(level)
-    doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
-    doc = Document(doc_path)
-    doc.add_heading(heading_text, level=level)
-    doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
-    doc.save(doc_path)
-    return "Heading added successfully."
+    try:
+        level = int(level)
+        doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
+        doc = Document(doc_path)
+        doc.add_heading(heading_text, level=level)
+        doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
+        doc.save(doc_path)
+        return "Heading added successfully."
+    except Exception as e:
+        return f"Error: {e}"
 
 
 def normalize_path(path):
@@ -188,20 +194,23 @@ def append_image_to_word_doc(doc_filename, image_filename, caption_text):
     image_filename (str): The path to the image file to append.
     caption_text (str): The caption text to append below the image.
     """
-    doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
-    doc = Document(doc_path)
-    image_path = os.path.join(
-        GlobalValues.ASSISTANTS_WORKING_FOLDER, normalize_path(image_filename)
-    )
-    doc.add_picture(image_path, width=Inches(5.0))
-    last_paragraph = doc.paragraphs[-1]
-    last_paragraph.alignment = 1  # Center the image
-    caption = doc.add_paragraph(caption_text)
-    caption.alignment = 1  # Center the caption
-    caption.style = "Caption"
-    doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
-    doc.save(doc_path)
-    return "Image added successfully."
+    try:
+        doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
+        doc = Document(doc_path)
+        image_path = os.path.join(
+            GlobalValues.ASSISTANTS_WORKING_FOLDER, normalize_path(image_filename)
+        )
+        doc.add_picture(image_path, width=Inches(5.0))
+        last_paragraph = doc.paragraphs[-1]
+        last_paragraph.alignment = 1  # Center the image
+        caption = doc.add_paragraph(caption_text)
+        caption.alignment = 1  # Center the caption
+        caption.style = "Caption"
+        doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
+        doc.save(doc_path)
+        return "Image added successfully."
+    except Exception as e:
+        return f"Error: {e}"
 
 
 @agent_action
@@ -213,14 +222,17 @@ def append_code_to_word_doc(doc_filename, code_text):
     doc_filename (str): The path to the Word document.
     code_text (str): The code text to append.
     """
-    doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
-    doc = Document(doc_path)
-    paragraph = doc.add_paragraph()
-    run = paragraph.add_run(code_text)
-    run.font.name = "Courier New"
-    doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
-    doc.save(doc_path)
-    return "Code block added successfully."
+    try:
+        doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
+        doc = Document(doc_path)
+        paragraph = doc.add_paragraph()
+        run = paragraph.add_run(code_text)
+        run.font.name = "Courier New"
+        doc_path = os.path.join(GlobalValues.ASSISTANTS_WORKING_FOLDER, doc_filename)
+        doc.save(doc_path)
+        return "Code block added successfully."
+    except Exception as e:
+        return f"Error: {e}"
 
 
 # # Usage example:

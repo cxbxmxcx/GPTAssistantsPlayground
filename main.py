@@ -194,6 +194,7 @@ def main_interface():
     custom_css = """
     :root {
         --adjustment-ratio: 150px; /* Height to subtract from the viewport for chatbot */
+        --iframe-ratio: 150px; /* Height of the iframe */
     }
 
     body, html {
@@ -247,7 +248,16 @@ def main_interface():
         height: auto;
         max-width: 100%; /* ensures it doesn’t exceed the container's width */
     }
+    
+    #prefect {
+        height: calc(100vh - var(--iframe-ratio)) !important; /* Uses adjustment ratio */
+        overflow-y: auto !important;
+    }
     """
+
+    prefect_url = "http://127.0.0.1:4200/dashboard"
+
+    iframe_html = f'<iframe id="prefect" src="{prefect_url}" width="100%" height="600px"></iframe>'
 
     # theme = gr.themes.Default()
 
@@ -311,6 +321,9 @@ def main_interface():
         with gr.Tab(label="Agentic Behavior Tree Runner"):
             with gr.Column(scale=4):
                 btree_runner = btree_runner_panel()
+
+        with gr.Tab(label="Prefect Flow Runner"):
+            gr.HTML(iframe_html)
 
         with gr.Tab(label="Logs"):
             with gr.Column(scale=4):

@@ -4,6 +4,8 @@ from playground.actions_manager import ActionsManager, agent_action
 from playground.assistants_api import api
 import os
 
+from playground.assistants_utils import get_actions_by_name, get_tools_by_name
+
 
 @agent_action
 def list_uploaded_files(purpose="assistants"):
@@ -67,6 +69,16 @@ def list_assistants(self):
     return assistants
 
 
+@agent_action
+def list_assistant_names_and_ids():
+    """Lists all the assistant names and corresponding ids."""
+    assistants = api.list_assistants()
+    assistant_names = [
+        {"name": assistant.name, "id": assistant.id} for assistant in assistants
+    ]
+    return assistant_names
+
+
 def get_tools(tools):
     """Get the tools from the given tools list."""
     tools_list = []
@@ -78,6 +90,19 @@ def get_tools(tools):
         elif hasattr(tool, "type"):
             tools_list.append(tool.type)
     return tools_list
+
+
+def sort_tools_by_name(tools):
+    tools_list = []
+    actions_list = []
+    for tool in tools:
+        if tool == "File search":
+            tools_list.append({"type": "file_search"})
+        elif tool == "Code interpreter":
+            tools_list.append({"type": "code_interpreter"})
+        else:
+            actions_list.append(tool)
+    return tools_list, actions_list
 
 
 @agent_action
@@ -125,11 +150,11 @@ def call_assistant(assistant_id, message):
 def create_assistant(
     assistant_name,
     assistant_instructions,
-    model,
-    tools,
-    response_format,
-    temperature,
-    top_p,
+    model="gpt-4o",
+    tools=[],
+    response_format="auto",
+    temperature=1.0,
+    top_p=1.0,
 ):
     """Creates an assistant with the given parameters.
     assistant_name: str, name of the assistant
@@ -140,18 +165,20 @@ def create_assistant(
     temperature: float, temperature for the assistant
     top_p: float, top p value for the assistant
     """
+    tools, actions = sort_tools_by_name(tools)
     actions_manager = ActionsManager()
     available_actions = actions_manager.get_actions()
-    actions = [action["agent_action"] for action in available_actions]
+    tools = get_tools_by_name(tools)
+    actions = get_actions_by_name(actions, available_actions)
     assistant = api.create_assistant(
         assistant_name,
         assistant_instructions,
-        "gpt-4o",
-        [],
-        actions,
-        "auto",
-        1.0,
-        1.0,
+        model=model,
+        tools=tools,
+        actions=actions,
+        response_format=response_format,
+        temperature=temperature,
+        top_p=top_p,
     )
     return assistant
 
@@ -164,11 +191,34 @@ def create_test_assistant():
 
 @agent_action
 def create_manager_assistant():
-    """Creates a manager assistant."""
+    """Creates the manager assistant. Used for managing and installing other assistants"""
     name = "Manager Assistant"
     instructions = """
     You are an assistant designed to manager other assistants. 
     To do so, you will need to call list_assistants every time a new conversation starts.  
-    This will let you know which assistants you have access to and what they can do.     
+    This will let you know which assistants you have access to and what they can do. 
+    
+    You also manage the assistants database (assistants.db).
+    Inside the database is a table of assistants called assistants that is defined by:
+    name: the name of the assistant (should be unique)
+    instructions: the instructions for the assistant
+    model: the model the assistant uses
+    tools: any tools the assistant uses
+    actions: any actions the assistant can access
+    temperature: the temperature to run the assistant on
+    top_p: top_p for the assistant responses
+    response_format: "auto" means the assistant will decide based on the request 
+    
+    You can use this database as an archive of the assistants. 
+    This will allow you to create any assistant that is in the database.      
     """
-    return create_assistant(name, instructions)
+    actions = [
+        "query_database",
+        "insert_or_update_database_entry",
+        "create_assistant",
+        "call_assistant",
+        "get_assistant_as_json",
+        "list_assistants",
+        "list_assistant_names_and_ids",
+    ]
+    return create_assistant(name, instructions, tools=actions)

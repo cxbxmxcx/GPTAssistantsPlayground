@@ -1,6 +1,7 @@
 import threading
 
 
+from prefect import task
 import py_trees
 
 from playground.assistants_api import api
@@ -17,10 +18,35 @@ class FunctionWrapper:
         return self.function(*self.args, **self.kwargs)
 
 
+# @task(log_prints=True)
+# def init_wrapper(action):
+#     # This is called once each time the behavior is started
+#     print("%s.initialise()" % action.name)
+#     action.thread_running = True
+#     action.thread_success = False
+#     action.thread = threading.Thread(target=action.long_running_process)
+#     action.thread.start()
+
+
+def create_task(action):
+    @task(name=action.name, description=action.assistant_name, log_prints=True)
+    def init_wrapper():
+        print(f"Initializing task: {action.name}")
+        print(f"Assistant: {action.assistant_name}")
+
+        action.thread_running = True
+        action.thread_success = False
+        action.thread = threading.Thread(target=action.long_running_process)
+        action.thread.start()
+
+    return init_wrapper
+
+
 # Define the ActionWithThread class
 class ActionWrapper(py_trees.behaviour.Behaviour):
-    def __init__(self, name, function_wrapper, is_condition=False):
+    def __init__(self, name, assistant_name, function_wrapper, is_condition=False):
         super(ActionWrapper, self).__init__(name=name)
+        self.assistant_name = assistant_name
         self.thread = None
         self.thread_running = False
         self.thread_success = False
@@ -33,15 +59,15 @@ class ActionWrapper(py_trees.behaviour.Behaviour):
         return py_trees.common.Status.SUCCESS
 
     def initialise(self):
-        # This is called once each time the behavior is started
-        print("%s.initialise()" % self.name)
-        self.thread_running = True
-        self.thread_success = False
-        self.thread = threading.Thread(target=self.long_running_process)
-        self.thread.start()
+        create_task(self)()
+        # # This is called once each time the behavior is started
+        # print("%s.initialise()" % self.name)
+        # self.thread_running = True
+        # self.thread_success = False
+        # self.thread = threading.Thread(target=self.long_running_process)
+        # self.thread.start()
 
     def long_running_process(self):
-        # Simulate a long-running process
         try:
             print("%s: Thread started, running process..." % self.name)
             result = self.function_wrapper()
@@ -88,7 +114,11 @@ def create_assistant_action(action_name, assistant_name, assistant_instructions)
     function_wrapper = FunctionWrapper(
         api.call_assistant, assistant.id, assistant_instructions
     )
-    return ActionWrapper(name=action_name, function_wrapper=function_wrapper)
+    return ActionWrapper(
+        name=action_name,
+        assistant_name=assistant_name,
+        function_wrapper=function_wrapper,
+    )
 
 
 def create_assistant_condition(condition_name, assistant_name, assistant_instructions):
@@ -97,7 +127,10 @@ def create_assistant_condition(condition_name, assistant_name, assistant_instruc
         api.call_assistant, assistant.id, assistant_instructions
     )
     return ActionWrapper(
-        name=condition_name, function_wrapper=function_wrapper, is_condition=True
+        name=condition_name,
+        assistant_name=assistant_name,
+        function_wrapper=function_wrapper,
+        is_condition=True,
     )
 
 
@@ -108,7 +141,11 @@ def create_assistant_action_on_thread(
     function_wrapper = FunctionWrapper(
         api.call_assistant_with_thread, thread, assistant.id, assistant_instructions
     )
-    return ActionWrapper(name=action_name, function_wrapper=function_wrapper)
+    return ActionWrapper(
+        name=action_name,
+        assistant_name=assistant_name,
+        function_wrapper=function_wrapper,
+    )
 
 
 def create_assistant_condition_on_thread(
@@ -119,5 +156,8 @@ def create_assistant_condition_on_thread(
         api.call_assistant_with_thread, thread, assistant.id, assistant_instructions
     )
     return ActionWrapper(
-        name=condition_name, function_wrapper=function_wrapper, is_condition=True
+        name=condition_name,
+        assistant_name=assistant_name,
+        function_wrapper=function_wrapper,
+        is_condition=True,
     )

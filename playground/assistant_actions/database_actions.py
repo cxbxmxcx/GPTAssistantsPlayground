@@ -70,7 +70,7 @@ def create_table(db_filename, table_name, columns):
 @agent_action
 def insert_or_update_database_entry(db_filename, table_name, columns):
     """
-    Insert or update an entry in the specified database table.
+    Insert or update an entry in the specified databasetable.
 
     Args:
     db_filename (str): The name of the database file

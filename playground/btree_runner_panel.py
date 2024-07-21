@@ -1,9 +1,7 @@
 import os
-import threading
-import time
 import yaml
 import gradio as gr
-from playground.behavior_tree_manager import BehaviorTreeManager
+from playground.behavior_tree_manager import BehaviorTreeManager, BehaviorTreeRunner
 
 
 def get_html_tree(tree):
@@ -178,22 +176,6 @@ def yaml_to_html_tree(yaml_tree):
 current_tree_runner = None
 
 
-class BehaviorTreeRunner(threading.Thread):
-    def __init__(self, tree, tick_interval=30):
-        super().__init__()
-        self.tree = tree
-        self.tick_interval = tick_interval
-        self._stop_event = threading.Event()
-
-    def run(self):
-        while not self._stop_event.is_set():
-            self.tree.tick()
-            time.sleep(self.tick_interval)
-
-    def stop(self):
-        self._stop_event.set()
-
-
 def run_selected_behavior_tree(yaml_file_path):
     global current_tree_runner
     if current_tree_runner and current_tree_runner.is_alive():
@@ -229,6 +211,11 @@ def save_yaml(yaml_content, yaml_file_path):
     return "YAML saved successfully."
 
 
+def deploy_btree(yaml_file_path):
+    manager = BehaviorTreeManager(os.path.dirname(yaml_file_path))
+    return manager.deploy_behavior_tree(yaml_file_path)
+
+
 def cancel_behavior_tree():
     global current_tree_runner
     if current_tree_runner and current_tree_runner.is_alive():
@@ -259,6 +246,8 @@ def btree_runner_panel():
             run_button = gr.Button("Run", visible=True)
             cancel_button = gr.Button("Cancel", visible=False)
             save_button = gr.Button("Save YAML")
+            deploy_button = gr.Button("Deploy")
+
         status_box = gr.Textbox(label="Status", interactive=False)
 
         yaml_file.change(
@@ -278,6 +267,8 @@ def btree_runner_panel():
         save_button.click(
             save_yaml, inputs=[yaml_code_block, yaml_file], outputs=status_box
         )
+
+        deploy_button.click(deploy_btree, inputs=[yaml_file], outputs=status_box)
 
     return demo
 

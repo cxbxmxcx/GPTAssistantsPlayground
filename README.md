@@ -54,10 +54,42 @@ Open a browser to the default Gradio port: http://127.0.0.1:7860/
 
 After the interface is launched, select or create a new agent and start chatting as shown in the image below:
 ![Playground](./images/gptplayground.png)
-The interface consists of the following components:
+The main interface tab consists of the following components:
 * The Assistants panel where you can select, update and create assistants
 * The conversation panel which is multi-modal and supports uploading files and for the assistant to generate and show files.
 * The Assistant log panel shows how the assistant is working with and consuming tools behind the scenes. This includes showing the code it runs within its code interpreter.
+Other interface tabs:
+* Logs - allows you to view any internal conversations by the assistant, this includes how and which actions (tools/functions) it is using.
+* Agentic Behavior Tree (new) - this panel allows you to load, visualize, run and deploy agentic behavior trees
+* Prefect Flow Runner - is a window to the Prefect web interface. You must have Prefect running to see this.
+
+## Installing the assistants
+You can install several of the demo assistants located in the assistants.db Sqlite database. To do this follow these instructions:
+* Create a new or use an existing assistant.
+* Give the assistant the action - create_manager_assistant (found under the Actions section)
+* Ask the assistant to create the manager assistant (ie. "please create the manager assistant")
+* Refresh your browser to reload the assistants selector
+* Select the new Manager Assistant - this assistant has the instructions and actions that will allow it to install assistants from the assistants.db database
+
+## Agentic Behavior Trees
+This tab allows you to open and run/deploy agentic behavior trees and includes the following functionality:
+* Load - load a yaml file that contains your tree definition. The folder btrees, contains some examples. Be sure to have the required assistants installed before running a btree.
+* Editing the YAML, as you edit the yaml, the graph displaying the btree will also update to show how your yaml is being parsed
+* Save - saving functionality is currently broken, it you make changes in a file it is recommended to copy paste the edits into the file directly.
+* Run - this will run the btree with the Playground, you can check the progress of the run by viewing the Logs tab
+* Deploy - (note: Prefect server must be running) - this will deploy the btree to Prefect and allow you to run, suspend, and schedule new runs using the web interface. Note, the Playground must be currently running in order to host the btree run. In the future their will be an option to deplay a btree to a Docker container.
+
+## Prefect (installation and running)
+Prefect is now automatically installed along with the other package requirements. 
+
+In order to use the Prefect Web UI you will need to run a server instance by executing the following in a new terminal window:
+```bash
+prefect server start
+```
+This will launch a server instance. You can then access Prefect through the tab in the Playground interface.
+
+More info on Prefect can be found here: https://github.com/PrefectHQ/prefect
+
 
 ## Learning Resources
 - [OpenAI Documentation](https://beta.openai.com/docs/)

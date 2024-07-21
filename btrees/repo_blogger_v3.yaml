@@ -1,0 +1,60 @@
+behavior_tree:
+  name: "Repository Blogger"
+  root:
+    type: "Selector"
+    memory: true
+    children:
+      - type: "Sequence"
+        name: "Search Selector"
+        memory: true
+        children:
+          - type: "Action"
+            name: "Search GitHub"
+            agent: "GitHub Researcher"
+            instructions: |
+              Research GitHub repositories on AI Agents.
+              Make sure to only select repositories that are relevant to AI Agents and use Python.
+              If you encounter any errors, please return just the word FAILURE.
+          - type: "Action"
+            name: "Search YouTube"
+            agent: "YouTube Project Researcher"
+            instructions: |
+              Load the file called top_github_repo.txt, extract the GitHub repository name and use it as the search term.
+              Query the "{search_term}" to search for "this month" videos on YouTube.
+              Use the filter "this month" to search for videos on YouTube.
+              then for each video download the transcript and determine relevance to the {search_term}
+              then select a single video that is most relevant to the search term.
+              Summarize the content of the video into 5 sections with 2-3 paragraphs per section.,
+              be sure to include a link to the video and highlight the link as a reference for the content.
+              and then save the transcript summarizations to a file called youtube_transcripts.txt
+              Make sure to save the search term at the top of the file.
+              Always make sure to use save_file tool/function to save the file before moving on.
+              If you encounter any errors, please return just the word FAILURE.
+          - type: "Action"
+            name: "Write blog"
+            agent: "GitHub Blogger"
+            instructions: |
+              Load the file called top_github_repo.txt,
+              extract the GitHub repository name and url from the file.
+              Load the file called youtube_transcripts.txt, to see what related videos are about.
+              If either file does not exist, return FAILURE.
+              Use video transcripts and readme file information to write a getting started blog post on the repository.
+              
+              As your last operation write the blog filename to a file called blog_filenames.txt.
+              If you encounter any errors, please return just the word FAILURE.          
+          - type: "Action"
+            name: "Cleanup"
+            agent: "File Manager"
+            instructions: |
+              Delete the top_github_repo.txt file.
+              Delete the blog_filenames.txt file. 
+              Delete the youtube_transcripts.txt file.           
+              If you encounter any errors, please return just the word FAILURE.
+      - type: "Action"
+        name: "Cleanup"
+        agent: "File Manager"
+        instructions: |
+          Delete the top_github_repo.txt file.
+          Delete the blog_filenames.txt file.   
+          Delete the youtube_transcripts.txt file.        
+          If you encounter any errors, please return just the word FAILURE.
