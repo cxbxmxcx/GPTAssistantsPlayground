@@ -1,5 +1,6 @@
 import random
 import urllib.parse
+import json
 from peewee import SqliteDatabase, Model, IntegerField, TextField
 
 from playground.actions_manager import agent_action
@@ -65,26 +66,30 @@ def post_to_twitter_outbox(content):
 
 
 @agent_action
-def get_search_term():
+def get_search_term(file_path="search_terms.json"):
     """Return a random search term."""
-    search_terms = [
-        "AI Agents",
-        # "OpenAI",
-        # "AI Music",
-        # "AI Video",
-        # "AI Startups",
-        # "AI in Software Development",
-    ]
-    top_search_terms = [
-        "Overwatch",
-        "Nintendo",
-        "Xbox",
-        "NASA",
-        "Blizzard Entertainment",
-        "Artificial Intelligence",
-        "Phys.org",
-        "GamesIndustry.biz",
-        "Symmetra",
-        "Mars 2020",
-    ]
-    return random.choice(search_terms)
+    try:
+        # Read the current list from the file
+        with open(file_path, "r") as f:
+            search_terms = json.load(f)
+    except FileNotFoundError:
+        # If the file doesn't exist, initialize with the default list
+        search_terms = [
+            "SearchGPT AI-powered search engine",
+            "Llama 3.1 open-source AI models",
+        ]
+
+    if not search_terms:
+        raise ValueError("All search terms have been used.")
+
+    # Choose a random term
+    term = random.choice(search_terms)
+
+    # Remove the chosen term from the list
+    search_terms.remove(term)
+
+    # Write the updated list back to the file
+    with open(file_path, "w") as f:
+        json.dump(search_terms, f)
+
+    return term

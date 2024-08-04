@@ -57,7 +57,6 @@ def agent_action(func):
             print(prompt)  # or return prompt if that's your intent
             return handle_semantic_function_call(prompt, _caller_agent)
         else:
-            # Proceed with the original call
             return func(*args, **kwargs)
 
     # Inspect the function's signature
@@ -186,22 +185,25 @@ class ActionsManager(metaclass=SingletonMeta):
                         and decorator.attr == "agent_action"
                     ):
                         # Dynamically load the function and update the action with its pointer
-                        function_pointer = self.load_function(full_path, node.name)
-                        decorated_actions.append(
-                            {
-                                "name": node.name,
-                                "group": os.path.splitext(os.path.basename(full_path))[
-                                    0
-                                ],
-                                "pointer": function_pointer,
-                                "agent_action": getattr(
-                                    function_pointer, "_agent_action", None
-                                ),
-                                "prompt_template": getattr(
-                                    function_pointer, "_prompt_template", None
-                                ),
-                            }
-                        )
+                        try:
+                            function_pointer = self.load_function(full_path, node.name)
+                            decorated_actions.append(
+                                {
+                                    "name": node.name,
+                                    "group": os.path.splitext(
+                                        os.path.basename(full_path)
+                                    )[0],
+                                    "pointer": function_pointer,
+                                    "agent_action": getattr(
+                                        function_pointer, "_agent_action", None
+                                    ),
+                                    "prompt_template": getattr(
+                                        function_pointer, "_prompt_template", None
+                                    ),
+                                }
+                            )
+                        except Exception as e:
+                            print(f"Error loading function {node.name}: {str(e)}")
         return decorated_actions
 
     def load_function(self, module_path, function_name):

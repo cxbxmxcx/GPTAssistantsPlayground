@@ -1,7 +1,4 @@
-import threading
-
-
-from prefect import task
+from prefect import flow
 import py_trees
 
 from playground.assistants_api import api
@@ -18,26 +15,19 @@ class FunctionWrapper:
         return self.function(*self.args, **self.kwargs)
 
 
-# @task(log_prints=True)
-# def init_wrapper(action):
-#     # This is called once each time the behavior is started
-#     print("%s.initialise()" % action.name)
-#     action.thread_running = True
-#     action.thread_success = False
-#     action.thread = threading.Thread(target=action.long_running_process)
-#     action.thread.start()
-
-
 def create_task(action):
-    @task(name=action.name, description=action.assistant_name, log_prints=True)
+    @flow(name=action.name, description=action.assistant_name, log_prints=True)
     def init_wrapper():
         print(f"Initializing task: {action.name}")
         print(f"Assistant: {action.assistant_name}")
 
-        action.thread_running = True
-        action.thread_success = False
-        action.thread = threading.Thread(target=action.long_running_process)
-        action.thread.start()
+        # action.thread_running = True
+        # action.thread_success = False
+        # action.thread = threading.Thread(target=action.long_running_process)
+        # action.thread.start()
+
+        # action.thread.join()
+        action.long_running_process()
 
     return init_wrapper
 
@@ -52,6 +42,7 @@ class ActionWrapper(py_trees.behaviour.Behaviour):
         self.thread_success = False
         self.function_wrapper = function_wrapper
         self.is_condition = is_condition
+        self.run_context = None
 
     def setup(self):
         # This is called once at the beginning to setup any necessary state or resources

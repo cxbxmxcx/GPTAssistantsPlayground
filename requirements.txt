@@ -14,3 +14,6 @@ opencv-python
 scipy
 prefect
 googlemaps
+fal-client
+pyautogui
+pymupdf
