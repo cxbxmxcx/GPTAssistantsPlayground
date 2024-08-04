@@ -63,13 +63,17 @@ Other interface tabs:
 * Agentic Behavior Tree (new) - this panel allows you to load, visualize, run and deploy agentic behavior trees
 * Prefect Flow Runner - is a window to the Prefect web interface. You must have Prefect running to see this.
 
-## Installing the assistants
-You can install several of the demo assistants located in the assistants.db Sqlite database. To do this follow these instructions:
-* Create a new or use an existing assistant.
-* Give the assistant the action - create_manager_assistant (found under the Actions section)
-* Ask the assistant to create the manager assistant (ie. "please create the manager assistant")
-* Refresh your browser to reload the assistants selector
-* Select the new Manager Assistant - this assistant has the instructions and actions that will allow it to install assistants from the assistants.db database
+## INSTALLING THE ASSISTANTS
+
+You can install several of the demo assistants located in the assistants.db Sqlite database. To do this, follow these instructions:
+
+*	Create a new or use an existing assistant.
+*	Give the assistant the action - create_manager_assistant (found under the Actions section)
+*	Ask the assistant to create the manager assistant (i.e. "please create the manager assistant"), be sure to name the assistant Manager Assistant.
+*	Refresh your browser to reload the assistants selector
+*	Select the new Manager Assistant - this assistant has the instructions and actions that will allow it to install assistants from the assistants.db database
+*	Talk to the Manager Assistant to give you list of assistants to install or just ask the manager to install all available assistants. 
+
 
 ## Agentic Behavior Trees
 This tab allows you to open and run/deploy agentic behavior trees and includes the following functionality:
