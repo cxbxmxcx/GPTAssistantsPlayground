@@ -112,6 +112,9 @@ class EventHandler(AssistantEventHandler):
         print(f"File saved as {image_file}")
         self._images += [image_file]
 
+    def on_image_file(self, image_file) -> None:
+        self._images += [image_file]
+
     def on_tool_call_created(self, tool_call):
         if tool_call.type == "code_interpreter":
             print("# >>> Code Interpreter", flush=True)
@@ -159,6 +162,8 @@ class EventHandler(AssistantEventHandler):
                                     for c in el.content:
                                         if hasattr(c, "image_file"):
                                             self.on_image_file_done(c.image_file)
+                        elif ".png" in output:
+                            self.on_image_file(output)
 
                         tool_outputs.append(
                             {"tool_call_id": tool.id, "output": str(output)}

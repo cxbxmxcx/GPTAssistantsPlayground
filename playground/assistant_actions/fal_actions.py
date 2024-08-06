@@ -14,7 +14,7 @@ def create_image_with_fal(
     model="fal-ai/flux-pro",
     image_size="landscape_4_3",
     num_inference_steps=28,
-    guidance_scale=3.5,
+    guidance_scale=20.0,
     seed=222,
 ):
     """

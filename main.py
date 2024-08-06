@@ -34,7 +34,8 @@ current_thread = None
 def create_new_thread():
     global current_thread
     current_thread = api.create_thread()
-    return "New thread created."
+    logger.reset_logs()
+    return []
 
 
 create_new_thread()
@@ -162,16 +163,20 @@ def run(history, assistant_id, artifacts):
     # history[-1][1] = wrap_latex_with_markdown(history[-1][1])
     yield history
 
-    files = extract_file_paths(history[-1][1])
-    for file in files:
-        file_path = get_file_path(file)
-        if os.path.exists(file_path):
-            history.append((None, (file_path,)))
-        yield history
+    # files = extract_file_paths(history[-1][1])
+    # for file in files:
+    #     file_path = get_file_path(file)
+    #     if os.path.exists(file_path):
+    #         history.append((None, (file_path,)))
+    #     yield history
 
     # Final flush of images
     while len(eh.images) > 0:
-        history.append((None, (eh.images.pop(),)))
+        file = eh.images.pop()
+        file_path = get_file_path(file)
+        if os.path.exists(file_path):
+            history.append((None, file_path))
+            history.append((None, (file_path,)))
         yield history
 
     initial_thread.join()
@@ -297,7 +302,7 @@ def main_interface():
                                 "Create New Thread", size="lg"
                             )
 
-                new_thread_button.click(create_new_thread, [], None)
+                new_thread_button.click(create_new_thread, [], [chatbot])
 
                 chat_msg = chat_input.submit(
                     ask_assistant,

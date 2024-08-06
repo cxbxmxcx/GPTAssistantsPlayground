@@ -6,6 +6,7 @@ import base64
 
 from playground.actions_manager import agent_action
 from playground.global_values import GlobalValues
+import re
 
 load_dotenv()
 
@@ -37,7 +38,7 @@ def create_image(prompt, model="dall-e-3", size="1024x1024", quality="standard",
     # Download the image
     image_response = requests.get(image_url)
     if image_response.status_code == 200:
-        local_filename = f"{prompt.replace(' ', '_').replace(',','')[:50]}.png"
+        local_filename = re.sub(r"[^\w\-.]", "", prompt)[:50] + ".png"
         local_path = os.path.join(
             GlobalValues.ASSISTANTS_WORKING_FOLDER, local_filename
         )
