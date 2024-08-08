@@ -75,8 +75,7 @@ def get_search_term(file_path="search_terms.json"):
     except FileNotFoundError:
         # If the file doesn't exist, initialize with the default list
         search_terms = [
-            "SearchGPT AI-powered search engine",
-            "Llama 3.1 open-source AI models",
+            "billy beane death",
         ]
 
     if not search_terms:
@@ -91,5 +90,7 @@ def get_search_term(file_path="search_terms.json"):
     # Write the updated list back to the file
     with open(file_path, "w") as f:
         json.dump(search_terms, f)
+
+    print(f"Chosen search term: {term}")
 
     return term

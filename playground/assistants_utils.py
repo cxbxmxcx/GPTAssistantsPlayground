@@ -162,7 +162,7 @@ class EventHandler(AssistantEventHandler):
                                     for c in el.content:
                                         if hasattr(c, "image_file"):
                                             self.on_image_file_done(c.image_file)
-                        elif ".png" in output:
+                        elif isinstance(output, str) and ".png" in output:
                             self.on_image_file(output)
 
                         tool_outputs.append(
