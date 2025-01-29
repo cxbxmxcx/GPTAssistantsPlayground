@@ -1,12 +1,9 @@
-import openai
-from dotenv import load_dotenv
-
-load_dotenv()
+from playground.llms import get_llm_client
 
 
 class SemanticManager:
     def __init__(self):
-        self.client = openai.OpenAI()
+        self.client = get_llm_client()
 
     def get_semantic_response(self, system, user, model="gpt-4o", temperature=0.0):
         messages = [

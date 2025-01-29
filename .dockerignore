@@ -1,0 +1,18 @@
+# Ignore virtual environments
+.venv
+venv
+__pycache__
+
+# Ignore Python cache files
+*.pyc
+*.pyo
+*.pyd
+*.cache
+
+# Ignore other temporary or build files
+*.log
+*.tmp
+
+# Ignore version control directories
+.git
+.gitignore

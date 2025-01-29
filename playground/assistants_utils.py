@@ -2,18 +2,18 @@ import datetime
 import json
 import os
 
-import openai
-from dotenv import load_dotenv
 from openai import AssistantEventHandler
 from typing_extensions import override
 
 from playground.actions_manager import ActionsManager
 from playground.global_values import GlobalValues
+from playground.llms import get_llm_client
 
-load_dotenv()
+# load_dotenv()
 
-# OpenAI client initialization
-client = openai.OpenAI()
+# # OpenAI client initialization
+# client = openai.OpenAI()
+client = get_llm_client()
 
 
 def get_tools(tools):

@@ -1,10 +1,10 @@
 import queue
 import threading
 
-import openai
 from dotenv import load_dotenv
 
 from playground.assistants_utils import EventHandler
+from playground.llms import get_llm_client
 
 
 load_dotenv()
@@ -12,7 +12,7 @@ load_dotenv()
 
 class AssistantsAPI:
     def __init__(self):
-        self.client = openai.OpenAI()
+        self.client = get_llm_client()
         self.actions_manager = None
 
     def create_thread(self):

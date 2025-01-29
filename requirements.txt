@@ -1,4 +1,4 @@
-gradio
+gradio==4.44.1
 openai
 wikipedia
 twitter-api-client
@@ -17,3 +17,9 @@ googlemaps
 fal-client
 pyautogui
 pymupdf
+azure-search-documents
+jinja2 
+openai 
+groq
+anthropic
+tiktoken
