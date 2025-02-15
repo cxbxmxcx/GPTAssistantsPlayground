@@ -12,8 +12,7 @@ def get_llm_client():
             from openai import OpenAI
 
             client = OpenAI(
-                api_key=os.getenv("OPENAI_API_KEY"),
-                api_version=os.getenv("OPENAI_API_VERSION"),
+                api_key=os.getenv("OPENAI_API_KEY"),                
             )
         elif api_type == "azure":
             from openai import AzureOpenAI
@@ -28,7 +27,7 @@ def get_llm_client():
         from openai import OpenAI
 
         client = OpenAI(
-            api_key=os.getenv("OPENAI_API_KEY"),            
+            api_key=os.getenv("OPENAI_API_KEY"),
         )
 
     return client
